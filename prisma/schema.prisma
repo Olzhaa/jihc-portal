@@ -44,8 +44,10 @@ enum SyllabusStatus {
 }
 
 enum ResourceType {
-  HALL
-  CLASSROOM
+  CLASSROOM // кәдімгі кабинет: бос болса бірден расталады
+  LAB // компьютер кабинеті
+  STAFFROOM // мұғалімдер бөлмесі
+  HALL // акт залы
 }
 
 enum BookingStatus {
@@ -66,24 +68,24 @@ model User {
   createdAt DateTime @default(now())
 
   // Ата-ана ↔ бала байланысы (бір ата-анада бірнеше бала болуы мүмкін)
-  children ParentLink[] @relation("ParentLinks")
-  parents  ParentLink[] @relation("ChildLinks")
-  parentPinHash String? // ата-ананың PIN хэші (тек PARENT рөлі үшін)
+  children      ParentLink[] @relation("ParentLinks")
+  parents       ParentLink[] @relation("ChildLinks")
+  parentId      String?      @unique // жүйе берген Parent ID (тек PARENT рөлі үшін)
+  parentPinHash String? // ата-ананың PIN хэші
 
-  teachingSlots   Schedule[]           @relation("TeacherSchedule")
-  attendance      Attendance[]         @relation("StudentAttendance")
-  markedAttendance Attendance[]        @relation("MarkedBy")
-  grades          Grade[]              @relation("StudentGrades")
-  givenGrades     Grade[]              @relation("GivenBy")
-  certificates    MedicalCertificate[] @relation("StudentCertificates")
-  reviewedCerts   MedicalCertificate[] @relation("CertReviewer")
-  syllabi         Syllabus[]           @relation("SyllabusAuthor")
-  reviewedSyllabi Syllabus[]           @relation("SyllabusReviewer")
-  bookings        Booking[]
-  announcements   Announcement[]
-  rules           Rule[]
-  accounts        Account[]
-  sessions        Session[]
+  teachingSlots    Schedule[]           @relation("TeacherSchedule")
+  attendance       Attendance[]         @relation("StudentAttendance")
+  markedAttendance Attendance[]         @relation("MarkedBy")
+  grades           Grade[]              @relation("StudentGrades")
+  givenGrades      Grade[]              @relation("GivenBy")
+  certificates     MedicalCertificate[] @relation("StudentCertificates")
+  reviewedCerts    MedicalCertificate[] @relation("CertReviewer")
+  syllabi          Syllabus[]           @relation("SyllabusAuthor")
+  reviewedSyllabi  Syllabus[]           @relation("SyllabusReviewer")
+  bookings         Booking[]
+  announcements    Announcement[]
+  rules            Rule[]
+  managedRooms     Room[]               @relation("RoomManager")
 }
 
 model ParentLink {
@@ -104,32 +106,36 @@ model Group {
 }
 
 model Course {
-  id       String     @id @default(uuid())
-  title    String
-  schedule Schedule[]
-  grades   Grade[]
+  id         String       @id @default(uuid())
+  code       String? // модуль коды, мысалы "КМ4 ОН 4.1, 4.3"
+  title      String
+  color      String       @default("#93c5fd")
+  schedule   Schedule[]
+  grades     Grade[]
   attendance Attendance[]
-  syllabi  Syllabus[]
+  syllabi    Syllabus[]
 }
 
 model Room {
-  id       String     @id @default(uuid())
-  name     String     @unique // "304 Кабинет", "Акт залы"
+  id       String       @id @default(uuid())
+  name     String       @unique // "304 Кабинет", "Акт залы"
   type     ResourceType
   capacity Int?
+  managerId String? // жауапты мұғалім: арнайы бөлмелердің өтінімдерін бекітеді
+  manager   User?   @relation("RoomManager", fields: [managerId], references: [id])
   schedule Schedule[]
   bookings Booking[]
 }
 
 model Schedule {
-  id        String @id @default(uuid())
-  groupId   String
-  courseId  String
-  teacherId String
-  roomId    String
-  dayOfWeek Int // 1-6
-  startTime String // "09:00"
-  endTime   String // "10:20"
+  id          String @id @default(uuid())
+  groupId     String
+  courseId    String
+  teacherId   String
+  roomId      String
+  dayOfWeek   Int // 1-5 (Дс–Жм)
+  startPeriod Int // қоңырау нөмірі, 1-ден басталады (src/lib/bells.ts)
+  endPeriod   Int // қоса алғанда; бір сабақ бірнеше қоңырауды алуы мүмкін
 
   group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
   course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -182,17 +188,17 @@ model Grade {
 }
 
 model Syllabus {
-  id           String         @id @default(uuid())
-  courseId     String
-  authorId     String
-  reviewerId   String?
-  title        String
-  topics       Json // [{ week, topic, hours }]
-  totalHours   Int
-  status       SyllabusStatus @default(DRAFT)
-  reviewNote   String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id         String         @id @default(uuid())
+  courseId   String
+  authorId   String
+  reviewerId String?
+  title      String
+  topics     Json // [{ week, topic, hours }]
+  totalHours Int
+  status     SyllabusStatus @default(DRAFT)
+  reviewNote String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
   course   Course @relation(fields: [courseId], references: [id])
   author   User   @relation("SyllabusAuthor", fields: [authorId], references: [id])
@@ -251,32 +257,4 @@ model Rule {
   createdAt DateTime @default(now())
 
   author User @relation(fields: [authorId], references: [id])
-}
-
-// NextAuth (Prisma adapter)
-model Account {
-  id                String  @id @default(uuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(uuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

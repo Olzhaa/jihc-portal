@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JIHC Portal (my.jihc.edu.kz)
 
-## Getting Started
+Жамбыл инновациялық жоғары колледжінің ішкі академиялық порталы: сабақ кестесі, электронды журнал (қатысу + 100 балдық баға), медициналық анықтамалар, силлабус модерациясы, кабинет/акт залын брондау, хабарландырулар, ережелер және басшылыққа арналған аналитика.
 
-First, run the development server:
+**Стек:** Next.js 15 (App Router, Server Actions) · Tailwind CSS 4 · Prisma 6 + PostgreSQL · NextAuth (Google @jihc.edu.kz, ата-ана үшін ЖСН/Parent ID + PIN).
+
+## Рөлдер
+
+| Рөл | Бөлім | Мүмкіндіктер |
+|---|---|---|
+| Студент | `/student` | кесте, бағалар журналы, анықтама жүктеу (PDF/PNG/JPG ≤ 5 МБ) |
+| Мұғалім | `/teacher` | кесте, журнал (қатысу + баға), силлабус, брондау, топқа хабарландыру, өзі жауапты бөлмелердің өтінімдерін бекіту |
+| Завуч | `/teacher` + `/academic-director` | кесте генераторы (топ/мұғалім/аудитория қақтығысы), анықтама мен силлабус модерациясы, ата-ана PIN-кодтарын шығару, ережелер, статистика |
+| Директор | `/director` + барлық басқару беттері | Executive dashboard, пайдаланушылар |
+| Ата-ана | `/parent` | баласының кестесі мен үлгерімі (тек қарау) |
+
+## Негізгі ережелер
+
+- Қоңырау кестесі `src/lib/bells.ts` ішінде: 11 × 45 минут, 8:30–17:50, дүйсенбі–жұма. Сабақ бірнеше қоңырауды алуы мүмкін.
+- Бағалар 100 балдық шкаламен сақталады; 5 балдық бағаға және GPA-ға (4.0) `src/lib/grades.ts` аударады.
+- Расталған медициналық анықтама сол күндердегі «Жоқ» белгілерін «Себепті» етеді.
+- Брондау: бос кәдімгі кабинет бірден расталады. Акт залы, компьютер кабинеттері және мұғалімдер бөлмесі бөлменің жауапты мұғаліміне (болмаса завучқа) барады. Завуч пен директордың брондауы бірден расталады.
+- Google арқылы тек `@jihc.edu.kz` поштасы және жүйеде бұрыннан бар пайдаланушы кіре алады (аккаунттарды әкімшілік енгізеді).
+
+## Жергілікті іске қосу
 
 ```bash
+cp .env.example .env          # DATABASE_URL, NEXTAUTH_SECRET, т.б.
+npm install
+npx prisma migrate deploy
+npm run db:seed               # демо деректер (ойдан құралған адамдар)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`DEMO_LOGIN="true"` болса, кіру бетінде әр рөлге бір батырмамен кіруге болады. Демо ата-ана: ЖСН `070512600123`, PIN `1234`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Колледж серверіне орнату (Docker)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env          # NEXTAUTH_URL=https://my.jihc.edu.kz, NEXTAUTH_SECRET, GOOGLE_*, POSTGRES_PASSWORD
+docker compose up -d --build  # PostgreSQL + қосымша, миграциялар өзі қолданылады
+```
 
-## Learn More
+Жүктелген файлдар `uploads` томында сақталады (`src/lib/storage.ts`). Алдына nginx/Caddy қойып HTTPS қосыңыз.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Google OAuth: Google Cloud Console → Credentials → OAuth client (Web). Redirect URI: `https://my.jihc.edu.kz/api/auth/callback/google`.

@@ -1,0 +1,54 @@
+import { prisma } from "./prisma";
+import { average, isoWeekday } from "./utils";
+import { attendanceRate, gpaFromAverage } from "./grades";
+import { lessonsForGroup } from "./schedule";
+import { announcementsFor } from "./announcements";
+
+/** Everything a student (or their parent) sees on the overview page. */
+export async function studentOverview(studentId: string) {
+  const student = await prisma.user.findUniqueOrThrow({ where: { id: studentId }, include: { group: true } });
+  const [lessons, grades, attendance, announcements] = await Promise.all([
+    student.groupId ? lessonsForGroup(student.groupId) : Promise.resolve([]),
+    prisma.grade.findMany({ where: { studentId }, include: { course: true }, orderBy: { date: "desc" } }),
+    prisma.attendance.findMany({ where: { studentId }, select: { status: true } }),
+    announcementsFor(student.groupId, 3),
+  ]);
+  const avg = average(grades.map((g) => g.value));
+  return {
+    student,
+    lessons,
+    todayLessons: lessons.filter((l) => l.dayOfWeek === isoWeekday(new Date())),
+    recentGrades: grades.slice(0, 6).map((g) => ({ id: g.id, value: g.value, course: g.course.title, date: g.date })),
+    avg,
+    gpa: avg === null ? null : gpaFromAverage(avg),
+    attendanceRate: attendanceRate(attendance.map((a) => a.status)),
+    absences: attendance.filter((a) => a.status === "ABSENT").length,
+    announcements,
+  };
+}
+
+/** Per-course grade book: current/midterm/exam grades plus attendance. */
+export async function studentGradebook(studentId: string) {
+  const [grades, attendance] = await Promise.all([
+    prisma.grade.findMany({ where: { studentId }, include: { course: true }, orderBy: { date: "asc" } }),
+    prisma.attendance.findMany({ where: { studentId }, include: { course: true }, orderBy: { date: "asc" } }),
+  ]);
+  const courses = new Map<string, { id: string; title: string; code: string | null; color: string }>();
+  for (const r of [...grades, ...attendance]) courses.set(r.course.id, r.course);
+  return [...courses.values()]
+    .map((course) => {
+      const g = grades.filter((x) => x.courseId === course.id);
+      const a = attendance.filter((x) => x.courseId === course.id);
+      return {
+        course,
+        current: g.filter((x) => x.type === "CURRENT"),
+        midterm: g.filter((x) => x.type === "MIDTERM"),
+        exam: g.filter((x) => x.type === "EXAM"),
+        avg: average(g.map((x) => x.value)),
+        attendanceRate: attendanceRate(a.map((x) => x.status)),
+        absences: a.filter((x) => x.status === "ABSENT").length,
+        attendance: a,
+      };
+    })
+    .sort((x, y) => x.course.title.localeCompare(y.course.title));
+}
