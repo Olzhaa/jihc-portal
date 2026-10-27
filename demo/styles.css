@@ -1,0 +1,4 @@
+/* Demo build: reuse the portal styles; Tailwind must also scan the shared components in src/. */
+@import "../src/app/globals.css";
+@source "../src";
+@source "./";
