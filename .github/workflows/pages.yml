@@ -17,6 +17,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # prisma generate needs a URL to load its config; the demo never connects
+      DATABASE_URL: postgresql://demo:demo@localhost:5432/demo
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
