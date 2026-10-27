@@ -1,0 +1,282 @@
+// JIHC Portal — Prisma schema (ТЗ 4-бөлімі негізінде, олқылықтары толықтырылған)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  VICE_PRINCIPAL
+  DIRECTOR
+  PARENT
+}
+
+enum CertificateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum GradeType {
+  CURRENT // ағымдағы
+  MIDTERM // аралық
+  EXAM // сессиялық
+}
+
+enum SyllabusStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ResourceType {
+  HALL
+  CLASSROOM
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String?  @unique // ата-аналарда корпоративтік пошта жоқ
+  name      String
+  role      Role
+  iin       String?  @unique // ЖСН (студенттер үшін)
+  groupId   String?
+  group     Group?   @relation(fields: [groupId], references: [id])
+  createdAt DateTime @default(now())
+
+  // Ата-ана ↔ бала байланысы (бір ата-анада бірнеше бала болуы мүмкін)
+  children ParentLink[] @relation("ParentLinks")
+  parents  ParentLink[] @relation("ChildLinks")
+  parentPinHash String? // ата-ананың PIN хэші (тек PARENT рөлі үшін)
+
+  teachingSlots   Schedule[]           @relation("TeacherSchedule")
+  attendance      Attendance[]         @relation("StudentAttendance")
+  markedAttendance Attendance[]        @relation("MarkedBy")
+  grades          Grade[]              @relation("StudentGrades")
+  givenGrades     Grade[]              @relation("GivenBy")
+  certificates    MedicalCertificate[] @relation("StudentCertificates")
+  reviewedCerts   MedicalCertificate[] @relation("CertReviewer")
+  syllabi         Syllabus[]           @relation("SyllabusAuthor")
+  reviewedSyllabi Syllabus[]           @relation("SyllabusReviewer")
+  bookings        Booking[]
+  announcements   Announcement[]
+  rules           Rule[]
+  accounts        Account[]
+  sessions        Session[]
+}
+
+model ParentLink {
+  parentId String
+  childId  String
+  parent   User   @relation("ParentLinks", fields: [parentId], references: [id], onDelete: Cascade)
+  child    User   @relation("ChildLinks", fields: [childId], references: [id], onDelete: Cascade)
+
+  @@id([parentId, childId])
+}
+
+model Group {
+  id            String         @id @default(uuid())
+  name          String         @unique // e.g., "CS-22-01"
+  students      User[]
+  schedule      Schedule[]
+  announcements Announcement[] @relation("AnnouncementGroups")
+}
+
+model Course {
+  id       String     @id @default(uuid())
+  title    String
+  schedule Schedule[]
+  grades   Grade[]
+  attendance Attendance[]
+  syllabi  Syllabus[]
+}
+
+model Room {
+  id       String     @id @default(uuid())
+  name     String     @unique // "304 Кабинет", "Акт залы"
+  type     ResourceType
+  capacity Int?
+  schedule Schedule[]
+  bookings Booking[]
+}
+
+model Schedule {
+  id        String @id @default(uuid())
+  groupId   String
+  courseId  String
+  teacherId String
+  roomId    String
+  dayOfWeek Int // 1-6
+  startTime String // "09:00"
+  endTime   String // "10:20"
+
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher User   @relation("TeacherSchedule", fields: [teacherId], references: [id])
+  room    Room   @relation(fields: [roomId], references: [id])
+
+  attendance Attendance[]
+  grades     Grade[]
+
+  @@index([groupId, dayOfWeek])
+  @@index([teacherId, dayOfWeek])
+  @@index([roomId, dayOfWeek])
+}
+
+model Attendance {
+  id         String           @id @default(uuid())
+  studentId  String
+  courseId   String
+  scheduleId String?
+  markedById String
+  date       DateTime         @db.Date
+  status     AttendanceStatus
+
+  student  User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+  course   Course    @relation(fields: [courseId], references: [id])
+  schedule Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  markedBy User      @relation("MarkedBy", fields: [markedById], references: [id])
+
+  @@unique([studentId, scheduleId, date])
+  @@index([courseId, date])
+}
+
+model Grade {
+  id         String    @id @default(uuid())
+  studentId  String
+  courseId   String
+  scheduleId String?
+  givenById  String
+  type       GradeType @default(CURRENT)
+  value      Float
+  comment    String?
+  date       DateTime  @default(now())
+
+  student  User      @relation("StudentGrades", fields: [studentId], references: [id], onDelete: Cascade)
+  course   Course    @relation(fields: [courseId], references: [id])
+  schedule Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  givenBy  User      @relation("GivenBy", fields: [givenById], references: [id])
+
+  @@index([studentId, courseId])
+}
+
+model Syllabus {
+  id           String         @id @default(uuid())
+  courseId     String
+  authorId     String
+  reviewerId   String?
+  title        String
+  topics       Json // [{ week, topic, hours }]
+  totalHours   Int
+  status       SyllabusStatus @default(DRAFT)
+  reviewNote   String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  course   Course @relation(fields: [courseId], references: [id])
+  author   User   @relation("SyllabusAuthor", fields: [authorId], references: [id])
+  reviewer User?  @relation("SyllabusReviewer", fields: [reviewerId], references: [id])
+}
+
+model Booking {
+  id        String        @id @default(uuid())
+  roomId    String
+  userId    String
+  startTime DateTime
+  endTime   DateTime
+  reason    String
+  status    BookingStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+
+  room Room @relation(fields: [roomId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([roomId, startTime])
+}
+
+model MedicalCertificate {
+  id         String            @id @default(uuid())
+  studentId  String
+  reviewerId String?
+  fileUrl    String
+  startDate  DateTime          @db.Date
+  endDate    DateTime          @db.Date
+  status     CertificateStatus @default(PENDING)
+  reviewNote String?
+  createdAt  DateTime          @default(now())
+
+  student  User  @relation("StudentCertificates", fields: [studentId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("CertReviewer", fields: [reviewerId], references: [id])
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  authorId  String
+  important Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  author User    @relation(fields: [authorId], references: [id])
+  groups Group[] @relation("AnnouncementGroups") // бос болса — барлығына
+}
+
+model Rule {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  authorId  String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorId], references: [id])
+}
+
+// NextAuth (Prisma adapter)
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
