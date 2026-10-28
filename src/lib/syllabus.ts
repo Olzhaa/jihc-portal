@@ -1,7 +1,7 @@
 /**
- * Силлабус құрылымы Smart Nation «Оқу бағдарламасы» кестесіне сәйкес:
+ * Силлабус құрылымы колледждің «Оқу жұмыс бағдарламасы» (Word) мен Smart Nation «Оқу бағдарламасы» кестесіне сәйкес:
  * тарау / оқыту нәтижесі (ОН) → тақырып + бағалау өлшемі → сағаттар бөлінісі.
- * Сол тізімнен EduPage-тің «Импортировать из MS Excel» терезесіне қоюға дайын кесте шығады.
+ * Сол тізімнен EduPage-тің «Импортировать из MS Excel» терезесіне қоюға дайын кесте және Word құжаты шығады.
  */
 export type SyllabusTopic = {
   chapter: string; // Тарау / ОН, мысалы "ОН 2.1 – АКТ негіздерін меңгеру"
@@ -10,22 +10,25 @@ export type SyllabusTopic = {
   theory: number; // теориялық сағат
   practice: number; // З/Т — зертханалық/тәжірибелік
   individual: number; // жеке
+  production: number; // өндірістік оқыту және/немесе кәсіптік практика
   sooj: number; // СОӨЖ
   soj: number; // СӨЖ
   lessonType: string; // мысалы "теор., зерт."
 };
 
+/** Оқу жұмыс бағдарламасындағы «Оның ішінде» бағандарының реті. */
 export const HOUR_FIELDS = [
-  { key: "theory", label: "Теория" },
-  { key: "practice", label: "З/Т" },
-  { key: "individual", label: "Жеке" },
-  { key: "sooj", label: "СОӨЖ" },
-  { key: "soj", label: "СӨЖ" },
+  { key: "theory", label: "Теория", long: "Теориялық" },
+  { key: "practice", label: "З/Т", long: "Зертханалық тәжірибелік" },
+  { key: "individual", label: "Жеке", long: "Жеке" },
+  { key: "production", label: "Практика", long: "Өндірістік оқыту және/немесе кәсіптік практика" },
+  { key: "sooj", label: "СОӨЖ", long: "Студенттің педагогпен өзіндік жұмысы" },
+  { key: "soj", label: "СӨЖ", long: "Студенттің өзіндік жұмысы" },
 ] as const;
 
 export type HourField = (typeof HOUR_FIELDS)[number]["key"];
 
-export const emptyTopic = (chapter = ""): SyllabusTopic => ({ chapter, topic: "", criterion: "", theory: 2, practice: 0, individual: 0, sooj: 0, soj: 0, lessonType: "" });
+export const emptyTopic = (chapter = ""): SyllabusTopic => ({ chapter, topic: "", criterion: "", theory: 2, practice: 0, individual: 0, production: 0, sooj: 0, soj: 0, lessonType: "" });
 
 export const topicHours = (t: SyllabusTopic) => HOUR_FIELDS.reduce((s, f) => s + (Number(t[f.key]) || 0), 0);
 
@@ -43,6 +46,7 @@ export function normalizeTopics(raw: unknown): SyllabusTopic[] {
       theory: num(r.theory),
       practice: num(r.practice),
       individual: num(r.individual),
+      production: num(r.production),
       sooj: num(r.sooj),
       soj: num(r.soj),
       lessonType: String(r.lessonType ?? "").trim(),
@@ -85,10 +89,84 @@ export function toSnationRows(topics: SyllabusTopic[]) {
   return [header, ...rows];
 }
 
+/** СӨЖ тапсырмалары кестесінің бір жолы. */
+export type SojTask = { topic: string; task: string; controlForm: string; literature: string; week: string; maxPoints: string };
+
+/** Титул беті мен түсіндірме жазба: Word құжатындағы бағдарламаның қалған бөліктері. */
+export type SyllabusDetails = {
+  module: string; // Пән/модуль атауы, мысалы «ЖММ 02 - ...»
+  specialty: string;
+  qualification: string;
+  groups: string;
+  studyForm: string;
+  credits: string;
+  courseLabel: string; // «2 курс»
+  approver: string; // директордың оқу ісі жөніндегі орынбасары
+  authors: string[];
+  place: string; // «Тараз 2026 ж»
+  description: string;
+  competence: string;
+  prerequisites: string;
+  postrequisites: string;
+  tools: string;
+  contacts: string;
+  sojTasks: SojTask[];
+  references: string[];
+};
+
+export const DETAIL_FIELDS: { key: Exclude<keyof SyllabusDetails, "authors" | "sojTasks" | "references">; label: string; long?: boolean }[] = [
+  { key: "module", label: "Пән/модуль атауы" },
+  { key: "specialty", label: "Мамандық (коды және атауы)" },
+  { key: "qualification", label: "Біліктілік (коды және атауы)" },
+  { key: "groups", label: "Тобы" },
+  { key: "studyForm", label: "Оқыту нысаны" },
+  { key: "credits", label: "Кредит саны" },
+  { key: "courseLabel", label: "Курс" },
+  { key: "approver", label: "Бекітетін (оқу ісі жөніндегі орынбасар)" },
+  { key: "place", label: "Қала, жыл" },
+  { key: "description", label: "Пән/модуль сипаттамасы", long: true },
+  { key: "competence", label: "Қалыптастырылатын құзіреттілік", long: true },
+  { key: "prerequisites", label: "Пререквизиттер", long: true },
+  { key: "postrequisites", label: "Постреквизиттер", long: true },
+  { key: "tools", label: "Оқытуға қажетті құралдар, жабдықтар", long: true },
+  { key: "contacts", label: "Оқытушының байланыс ақпараты", long: true },
+];
+
+export const SOJ_FIELDS: { key: keyof SojTask; label: string }[] = [
+  { key: "topic", label: "Бағалау өлшемшарттары және/немесе сабақ тақырыптары" },
+  { key: "task", label: "СӨЖ тақырыптары (тапсырма мазмұны)" },
+  { key: "controlForm", label: "Бақылау нысаны" },
+  { key: "literature", label: "Ұсынылатын әдебиеттер" },
+  { key: "week", label: "Тапсыру мерзімі (аптаның №)" },
+  { key: "maxPoints", label: "Балл максимум" },
+];
+
+export const emptyDetails = (): SyllabusDetails => ({
+  module: "", specialty: "", qualification: "", groups: "", studyForm: "", credits: "", courseLabel: "", approver: "", authors: [], place: "",
+  description: "", competence: "", prerequisites: "", postrequisites: "", tools: "", contacts: "", sojTasks: [], references: [],
+});
+
+const str = (v: unknown) => (typeof v === "string" ? v.trim() : typeof v === "number" ? String(v) : "");
+
+export function normalizeDetails(raw: unknown): SyllabusDetails {
+  const d = emptyDetails();
+  if (!raw || typeof raw !== "object") return d;
+  const r = raw as Record<string, unknown>;
+  for (const f of DETAIL_FIELDS) d[f.key] = str(r[f.key]);
+  d.authors = Array.isArray(r.authors) ? r.authors.map(str).filter(Boolean) : [];
+  d.references = Array.isArray(r.references) ? r.references.map(str).filter(Boolean) : [];
+  d.sojTasks = Array.isArray(r.sojTasks)
+    ? r.sojTasks
+        .map((t: Record<string, unknown>) => Object.fromEntries(SOJ_FIELDS.map((f) => [f.key, str(t?.[f.key])])) as SojTask)
+        .filter((t) => Object.values(t).some(Boolean))
+    : [];
+  return d;
+}
+
 /** Shared checks before saving (server action and demo store). */
-export function cleanSyllabus(input: { title: string; topics: SyllabusTopic[] }) {
+export function cleanSyllabus(input: { title: string; topics: SyllabusTopic[]; details?: unknown }) {
   const topics = normalizeTopics(input.topics).filter((t) => t.topic);
   if (!input.title.trim()) return { error: "Атауын жазыңыз" };
   if (!topics.length) return { error: "Кемінде бір тақырып қосыңыз" };
-  return { title: input.title.trim(), topics, totalHours: totals(topics).all };
+  return { title: input.title.trim(), topics, totalHours: totals(topics).all, details: normalizeDetails(input.details) };
 }

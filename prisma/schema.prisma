@@ -81,6 +81,7 @@ model User {
   markedAttendance Attendance[]         @relation("MarkedBy")
   grades           Grade[]              @relation("StudentGrades")
   givenGrades      Grade[]              @relation("GivenBy")
+  assignments      Assignment[]
   certificates     MedicalCertificate[] @relation("StudentCertificates")
   reviewedCerts    MedicalCertificate[] @relation("CertReviewer")
   syllabi          Syllabus[]           @relation("SyllabusAuthor")
@@ -122,17 +123,19 @@ model Group {
   announcements Announcement[] @relation("AnnouncementGroups")
   curatorTasks  CuratorTask[]
   classEvents   ClassEvent[]
+  assignments   Assignment[]
 }
 
 model Course {
-  id         String       @id @default(uuid())
-  code       String? // модуль коды, мысалы "КМ4 ОН 4.1, 4.3"
-  title      String
-  color      String       @default("#93c5fd")
-  schedule   Schedule[]
-  grades     Grade[]
-  attendance Attendance[]
-  syllabi    Syllabus[]
+  id          String       @id @default(uuid())
+  code        String? // модуль коды, мысалы "КМ4 ОН 4.1, 4.3"
+  title       String
+  color       String       @default("#93c5fd")
+  schedule    Schedule[]
+  grades      Grade[]
+  assignments Assignment[]
+  attendance  Attendance[]
+  syllabi     Syllabus[]
 }
 
 model Room {
@@ -189,24 +192,47 @@ model Attendance {
 }
 
 model Grade {
-  id         String    @id @default(uuid())
-  studentId  String
-  courseId   String
-  scheduleId String?
-  givenById  String
-  type       GradeType @default(CURRENT)
-  value      Float
-  weight     Float     @default(1) // коэффициент: 0.25, 0.5, 1, 2, 3
-  workType   String    @default("simple") // Smart Nation баға түрі (src/lib/assessment.ts)
-  comment    String?
-  date       DateTime  @default(now())
+  id           String    @id @default(uuid())
+  studentId    String
+  courseId     String
+  scheduleId   String?
+  givenById    String
+  type         GradeType @default(CURRENT)
+  value        Float
+  weight       Float     @default(1) // коэффициент: 0.25, 0.5, 1, 2, 3
+  workType     String    @default("simple") // Smart Nation баға түрі (src/lib/assessment.ts)
+  assignmentId String? // EduPage «Назначение/экзамен» бағаны; журналдан қойылған бағада бос
+  comment      String?
+  date         DateTime  @default(now())
 
-  student  User      @relation("StudentGrades", fields: [studentId], references: [id], onDelete: Cascade)
-  course   Course    @relation(fields: [courseId], references: [id])
-  schedule Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
-  givenBy  User      @relation("GivenBy", fields: [givenById], references: [id])
+  student    User        @relation("StudentGrades", fields: [studentId], references: [id], onDelete: Cascade)
+  course     Course      @relation(fields: [courseId], references: [id])
+  schedule   Schedule?   @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  givenBy    User        @relation("GivenBy", fields: [givenById], references: [id])
+  assignment Assignment? @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, courseId])
+}
+
+/// EduPage «Новое назначение / экзамен»: бағалар кітабындағы бір баған (атауы, категориясы, коэффициенті, күні).
+model Assignment {
+  id          String    @id @default(uuid())
+  courseId    String
+  groupId     String
+  createdById String
+  title       String
+  type        GradeType @default(CURRENT)
+  weight      Float     @default(1)
+  workType    String    @default("simple")
+  date        DateTime  @db.Date
+  createdAt   DateTime  @default(now())
+
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id])
+  grades    Grade[]
+
+  @@index([courseId, groupId])
 }
 
 // Сабақтың тақырыбы мен үй жұмысы (EduPage «Классный журнал», Smart Nation журнал күні)
@@ -230,6 +256,7 @@ model Syllabus {
   reviewerId String?
   title      String
   topics     Json // SyllabusTopic[] (src/lib/syllabus.ts): ОН → тақырып → сағаттар
+  details    Json? // SyllabusDetails: титул, түсіндірме жазба, СӨЖ тапсырмалары, әдебиеттер
   totalHours Int
   status     SyllabusStatus @default(DRAFT)
   reviewNote String?

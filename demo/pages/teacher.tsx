@@ -15,7 +15,8 @@ import { JournalForm } from "@/components/journal-form";
 import { GradebookTable } from "@/components/gradebook-table";
 import { SyllabusEditor, SyllabusExport, type SyllabusDraft } from "@/components/syllabus-editor";
 import { journalColumns, pickPlan, validateJournal, type JournalPayload } from "@/lib/journal";
-import { cleanSyllabus, normalizeTopics } from "@/lib/syllabus";
+import { cleanAssignment } from "@/lib/gradebook";
+import { cleanSyllabus, normalizeDetails, normalizeTopics } from "@/lib/syllabus";
 import { MANAGER_ROLES } from "@/lib/roles";
 import { cn, formatDate, isoWeekday, parseISODate, toISODate } from "@/lib/utils";
 import { ROOM_TYPE_LABEL, needsApproval } from "@/lib/rooms";
@@ -205,7 +206,7 @@ function JournalEditor({ lessonId, date }: { lessonId: string; date: string }) {
   const day = parseISODate(date);
   const students = db.users.filter((u) => u.role === "STUDENT" && u.groupId === lesson.groupId).sort((a, b) => a.name.localeCompare(b.name));
   const excused = db.certificates.filter((c) => c.status === "APPROVED" && c.startDate <= day && c.endDate >= day).map((c) => c.studentId);
-  const onDay = <T extends { scheduleId: string; date: Date }>(rows: T[]) => rows.filter((x) => x.scheduleId === lessonId && +x.date === +day);
+  const onDay = <T extends { scheduleId: string | null; date: Date }>(rows: T[]) => rows.filter((x) => x.scheduleId === lessonId && +x.date === +day);
   const record = onDay(db.lessonRecords)[0];
   const plan = pickPlan(db.syllabi.filter((s) => s.courseId === lesson.courseId && s.authorId === lesson.teacherId));
 
@@ -225,7 +226,7 @@ function JournalEditor({ lessonId, date }: { lessonId: string; date: string }) {
         else d.attendance.push({ id: uid(), studentId: r.studentId, courseId: lesson.courseId, scheduleId: lessonId, markedById: me.id, date: day, status: r.status });
         d.grades = d.grades.filter((x) => !(x.studentId === r.studentId && x.scheduleId === lessonId && +x.date === +day && x.type === p.gradeType));
         if (r.grade.trim() !== "")
-          d.grades.push({ id: uid(), studentId: r.studentId, courseId: lesson.courseId, scheduleId: lessonId, givenById: me.id, value: Number(r.grade), type: p.gradeType, weight: p.weight, workType: p.workType, date: day });
+          d.grades.push({ id: uid(), studentId: r.studentId, courseId: lesson.courseId, scheduleId: lessonId, givenById: me.id, value: Number(r.grade), type: p.gradeType, weight: p.weight, workType: p.workType, date: day, assignmentId: null });
       }
     });
     return { ok: true as const };
@@ -264,7 +265,7 @@ export function Gradebook() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Бағалар кітабы" description="Категориялар, салмақты орташа балл және EduPage мен Smart Nation-ға көшіруге арналған экспорт" />
+      <PageHeader title="Бағалар кітабы" description="EduPage «Оценки» сияқты: назначениелер, бағаны ұяшыққа жазу, салмақты орташа балл және EduPage мен Smart Nation-ға экспорт" />
       <div className="space-y-1">
         <Label>Курс</Label>
         <Select value={`${current.groupId}:${current.courseId}`} onChange={(e) => navigate(`/teacher/gradebook?course=${e.target.value}`)} className="w-auto">
@@ -290,6 +291,37 @@ export function Gradebook() {
             title={title}
             students={students.map((s) => ({ id: s.id, name: s.name }))}
             grades={db.grades.filter((g) => g.courseId === course.id && ids.has(g.studentId))}
+            assignments={db.assignments.filter((a) => a.courseId === course.id && a.groupId === group.id)}
+            actions={{
+              setGrade: ({ studentId, column, gradeId, value }) =>
+                mutate((d) => {
+                  if (gradeId) {
+                    d.grades = value === null ? d.grades.filter((g) => g.id !== gradeId) : d.grades.map((g) => (g.id === gradeId ? { ...g, value, givenById: me.id } : g));
+                  } else if (value !== null) {
+                    d.grades.push({
+                      id: uid(), studentId, courseId: course.id, scheduleId: null, givenById: me.id, value, assignmentId: column.assignmentId,
+                      type: column.type, weight: column.weight, workType: column.workType, date: column.date,
+                    });
+                  }
+                }),
+              saveAssignment: (input) => {
+                const data = cleanAssignment(input);
+                if ("error" in data) return { error: data.error };
+                mutate((d) => {
+                  if (input.id) {
+                    d.assignments = d.assignments.map((a) => (a.id === input.id ? { ...a, ...data } : a));
+                    d.grades = d.grades.map((g) => (g.assignmentId === input.id ? { ...g, type: data.type, weight: data.weight, workType: data.workType, date: data.date } : g));
+                  } else {
+                    d.assignments.push({ id: uid(), courseId: course.id, groupId: group.id, createdById: me.id, ...data });
+                  }
+                });
+              },
+              deleteAssignment: (id) =>
+                mutate((d) => {
+                  d.assignments = d.assignments.filter((a) => a.id !== id);
+                  d.grades = d.grades.filter((g) => g.assignmentId !== id);
+                }),
+            }}
             attendance={db.attendance
               .filter((a) => a.courseId === course.id && ids.has(a.studentId))
               .map((a) => {
@@ -399,7 +431,7 @@ export function Syllabus() {
                 <details className="mt-2">
                   <summary className="cursor-pointer text-primary">Тақырыптар мен экспорт</summary>
                   <div className="mt-2">
-                    <SyllabusExport title={`${byId(db.courses, s.courseId)?.title} ${s.title}`} topics={normalizeTopics(s.topics)} />
+                    <SyllabusExport title={`${byId(db.courses, s.courseId)?.title} ${s.title}`} courseTitle={byId(db.courses, s.courseId)?.title ?? ""} topics={normalizeTopics(s.topics)} details={normalizeDetails(s.details)} />
                   </div>
                 </details>
               </CardContent>

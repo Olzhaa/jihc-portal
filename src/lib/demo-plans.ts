@@ -1,4 +1,4 @@
-import type { SyllabusTopic } from "./syllabus";
+import type { SyllabusDetails, SyllabusTopic } from "./syllabus";
 
 /**
  * Демо силлабустар (prisma/seed.ts пен demo/store.ts ортақ қолданады).
@@ -6,7 +6,7 @@ import type { SyllabusTopic } from "./syllabus";
  * Тақырып атаулары мысал ретінде берілген.
  */
 const t = (chapter: string, topic: string, theory: number, practice: number, lessonType: string, criterion = ""): SyllabusTopic => ({
-  chapter, topic, criterion, theory, practice, individual: 0, sooj: 0, soj: 0, lessonType,
+  chapter, topic, criterion, theory, practice, individual: 0, production: 0, sooj: 0, soj: 0, lessonType,
 });
 
 const OH21 = "ОН 2.1 – АКТ негіздерін меңгеру";
@@ -40,3 +40,28 @@ export const GRAPH_PLAN: SyllabusTopic[] = [
   t(GD2, "Векторлық пішіндер мен контурлар", 2, 6, "теор., зерт."),
   t(GD2, "Логотип жасау", 2, 6, "теор., зерт.", "Бренд үшін логотип әзірлейді"),
 ];
+
+/** ЖММ 2 бағдарламасының титулы мен түсіндірме жазбасы (мысал; байланыс деректері әдейі жоқ). */
+export const IKT_DETAILS: SyllabusDetails = {
+  module: "ЖММ 02 - Ақпараттық-коммуникациялық және цифрлық технологияларды қолдану",
+  specialty: "04110100 - Есеп және аудит",
+  qualification: "4S04110102 - Бухгалтер",
+  groups: "2D-1, 2D-2",
+  studyForm: "күндізгі негізгі орта білім базасында",
+  credits: "3",
+  courseLabel: "2 курс",
+  approver: "",
+  authors: ["Ғалым Сапаров"],
+  place: "Тараз 2026 ж",
+  description: "Модуль кәсіптік қызметте ақпараттық-коммуникациялық және цифрлық технологияларды қолдану үшін қажетті білім мен дағдыларды қалыптастырады.",
+  competence: "Кәсіптік қызметте ақпараттық-коммуникациялық технологияларды қолдану.",
+  prerequisites: "Математика\nИнформатика",
+  postrequisites: "Бухгалтерлік (қаржылық) есептілікті жасауға қатысу",
+  tools: "Компьютерлер, проектор, Google Workspace.",
+  contacts: "",
+  sojTasks: [
+    { topic: "Google Sheets-та кестелермен жұмыс", task: "Тауарлар кестесін құрып, жалпы соманы есептеңіз.", controlForm: "Практикалық жұмыс", literature: "", week: "1 апта", maxPoints: "100" },
+    { topic: "Формулалар мен функциялар", task: "SUMIFS арқылы категория бойынша соманы есептеңіз.", controlForm: "Практикалық жұмыс", literature: "", week: "2 апта", maxPoints: "100" },
+  ],
+  references: [],
+};

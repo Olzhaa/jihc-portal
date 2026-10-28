@@ -15,7 +15,7 @@ import { ReviewButtons } from "@/components/review-buttons";
 import { SyllabusExport } from "@/components/syllabus-editor";
 import { GroupMapping } from "@/components/group-mapping";
 import { checkSnationCode } from "@/lib/assessment";
-import { normalizeTopics } from "@/lib/syllabus";
+import { normalizeDetails, normalizeTopics } from "@/lib/syllabus";
 import { BELLS, DAYS } from "@/lib/bells";
 import { gradeTone } from "@/lib/grades";
 import { cn, formatDate } from "@/lib/utils";
@@ -292,7 +292,7 @@ export function Syllabi() {
               <details open={s.status === "PENDING"}>
                 <summary className="cursor-pointer text-sm text-primary">{s.topics.length} тақырып · {s.totalHours} сағат</summary>
                 <div className="mt-2">
-                  <SyllabusExport title={`${c.title} ${s.title}`} topics={normalizeTopics(s.topics)} />
+                  <SyllabusExport title={`${c.title} ${s.title}`} courseTitle={c.title} topics={normalizeTopics(s.topics)} details={normalizeDetails(s.details)} />
                 </div>
               </details>
               {s.status === "PENDING" ? (

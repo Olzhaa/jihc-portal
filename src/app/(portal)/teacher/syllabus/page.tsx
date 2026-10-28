@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/status-badges";
 import { formatDate } from "@/lib/utils";
 import { SyllabusForm } from "./syllabus-form";
 import { SyllabusExport } from "@/components/syllabus-editor";
-import { normalizeTopics } from "@/lib/syllabus";
+import { normalizeDetails, normalizeTopics } from "@/lib/syllabus";
 
 export default async function SyllabusPage() {
   const user = await requireUser(STAFF_ROLES);
@@ -51,7 +51,7 @@ export default async function SyllabusPage() {
                 <details className="mt-2">
                   <summary className="cursor-pointer text-primary">Тақырыптар мен экспорт</summary>
                   <div className="mt-2">
-                    <SyllabusExport title={`${s.course.title} ${s.title}`} topics={normalizeTopics(s.topics)} />
+                    <SyllabusExport title={`${s.course.title} ${s.title}`} courseTitle={s.course.title} topics={normalizeTopics(s.topics)} details={normalizeDetails(s.details)} />
                   </div>
                 </details>
               </CardContent>

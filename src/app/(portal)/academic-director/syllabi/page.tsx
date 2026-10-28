@@ -8,7 +8,7 @@ import { ReviewButtons } from "@/components/review-buttons";
 import { formatDate } from "@/lib/utils";
 import { reviewSyllabus } from "../actions";
 import { SyllabusExport } from "@/components/syllabus-editor";
-import { normalizeTopics } from "@/lib/syllabus";
+import { normalizeDetails, normalizeTopics } from "@/lib/syllabus";
 
 export default async function SyllabusModeration() {
   await requireUser(MANAGER_ROLES);
@@ -40,7 +40,7 @@ export default async function SyllabusModeration() {
                 {normalizeTopics(s.topics).length} тақырып · {s.totalHours} сағат
               </summary>
               <div className="mt-2">
-                <SyllabusExport title={`${s.course.title} ${s.title}`} topics={normalizeTopics(s.topics)} />
+                <SyllabusExport title={`${s.course.title} ${s.title}`} courseTitle={s.course.title} topics={normalizeTopics(s.topics)} details={normalizeDetails(s.details)} />
               </div>
             </details>
             {s.status === "PENDING" ? (
