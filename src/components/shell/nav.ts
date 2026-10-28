@@ -23,6 +23,20 @@ const managementGroup: NavGroup = {
     { href: "/academic-director/syllabi", label: "Силлабус модерациясы", icon: "check" },
     { href: "/academic-director/bookings", label: "Брондау өтінімдері", icon: "door" },
     { href: "/academic-director/parents", label: "Ата-ана PIN-кодтары", icon: "key" },
+    { href: "/academic-director/curators", label: "Кураторлар", icon: "usercheck" },
+  ],
+};
+
+/** Shown only to teachers who curate at least one group. */
+export const curatorGroup: NavGroup = {
+  title: "Кураторлық",
+  items: [
+    { href: "/teacher/curator", label: "Шолу", icon: "compass" },
+    { href: "/teacher/curator/students", label: "Студенттер", icon: "users" },
+    { href: "/teacher/curator/contacts", label: "Байланыс журналы", icon: "message" },
+    { href: "/teacher/curator/cycle", label: "Куратор циклы", icon: "repeat" },
+    { href: "/teacher/curator/events", label: "Іс-шаралар", icon: "party" },
+    { href: "/teacher/curator/guides", label: "Нұсқаулықтар", icon: "info" },
   ],
 };
 
@@ -43,6 +57,7 @@ export const NAV: Record<Role, NavGroup[]> = {
         { href: "/student/schedule", label: "Сабақ кестесі", icon: "calendar" },
         { href: "/student/grades", label: "Бағалар журналы", icon: "book" },
         { href: "/student/certificates", label: "Анықтама тапсыру", icon: "stethoscope" },
+        { href: "/student/reflection", label: "Рефлексия", icon: "sparkles" },
       ],
     },
     commonGroup,
@@ -66,3 +81,9 @@ export const NAV: Record<Role, NavGroup[]> = {
     { title: "Ақпарат", items: [commonGroup.items[0]] },
   ],
 };
+
+/** Role menu, with the curator section after the first group for curators. */
+export function navFor(role: Role, isCurator: boolean): NavGroup[] {
+  const groups = NAV[role];
+  return isCurator ? [groups[0], curatorGroup, ...groups.slice(1)] : groups;
+}

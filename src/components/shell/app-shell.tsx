@@ -1,12 +1,14 @@
 import { requireUser } from "@/lib/auth";
-import { NAV } from "./nav";
+import { prisma } from "@/lib/prisma";
+import { STAFF_ROLES, ROLE_LABEL } from "@/lib/roles";
+import { navFor } from "./nav";
 import { Sidebar } from "./sidebar";
-import { ROLE_LABEL } from "@/lib/roles";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+  const isCurator = STAFF_ROLES.includes(user.role) && (await prisma.group.count({ where: { curatorId: user.id } })) > 0;
   return (
-    <Sidebar groups={NAV[user.role]} userName={user.name ?? ""} roleLabel={ROLE_LABEL[user.role]}>
+    <Sidebar groups={navFor(user.role, isCurator)} userName={user.name ?? ""} roleLabel={ROLE_LABEL[user.role]}>
       {children}
     </Sidebar>
   );

@@ -1,5 +1,7 @@
 import { PrismaClient, type AttendanceStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { KIND_FIELDS, dateFields, groupCourse, isoToday, type RecordKind } from "../src/lib/curator";
+import { demoCuratorData } from "../src/lib/curator-demo";
 
 const prisma = new PrismaClient();
 
@@ -19,6 +21,8 @@ const fullName = () => {
 
 async function main() {
   await prisma.$transaction([
+    prisma.contactLog.deleteMany(), prisma.guardian.deleteMany(), prisma.studentProfile.deleteMany(), prisma.achievement.deleteMany(),
+    prisma.bookRead.deleteMany(), prisma.testResult.deleteMany(), prisma.reflection.deleteMany(), prisma.curatorTask.deleteMany(), prisma.classEvent.deleteMany(),
     prisma.attendance.deleteMany(), prisma.grade.deleteMany(), prisma.medicalCertificate.deleteMany(),
     prisma.booking.deleteMany(), prisma.syllabus.deleteMany(), prisma.schedule.deleteMany(),
     prisma.announcement.deleteMany(), prisma.rule.deleteMany(), prisma.parentLink.deleteMany(),
@@ -60,7 +64,7 @@ async function main() {
   await prisma.room.update({ where: { id: staffroom.id }, data: { managerId: teacher.id } });
 
   // Students: ~14 per group, first one in 2F-1 is the demo student.
-  const students: { id: string; groupId: string }[] = [];
+  const students: { id: string; name: string; groupId: string }[] = [];
   let n = 0;
   for (const g of groups) {
     for (let i = 0; i < 14; i++) {
@@ -76,7 +80,7 @@ async function main() {
           groupId: g.id,
         },
       });
-      students.push({ id: u.id, groupId: g.id });
+      students.push({ id: u.id, name, groupId: g.id });
     }
   }
   const demoStudent = students[0];
@@ -208,6 +212,25 @@ async function main() {
       { authorId: zavuch.id, title: "Сабақ босатуды рәсімдеу", content: "Ауырған жағдайда студент 3 жұмыс күні ішінде медициналық анықтаманы порталға жүктеуі тиіс. Завуч растағаннан кейін босатылған күндер «себепті» деп белгіленеді." },
     ],
   });
+
+  // Curators: the demo teacher curates 2F-1 (with a filled-in workspace), Ажар Нұрғали curates 3F-3.
+  await prisma.group.update({ where: { id: g2F1.id }, data: { curatorId: teacher.id } });
+  await prisma.group.update({ where: { id: g3F3.id }, data: { curatorId: t2.id } });
+  const cur = demoCuratorData(students.filter((x) => x.groupId === g2F1.id), groupCourse(g2F1.name), isoToday(), rand);
+  const toDb = (kind: RecordKind, r: Record<string, unknown>) => {
+    const out = { ...r };
+    for (const k of dateFields(KIND_FIELDS[kind])) if (typeof out[k] === "string") out[k] = new Date(`${out[k]}T00:00:00.000Z`);
+    return out;
+  };
+  for (const [studentId, p] of Object.entries(cur.profiles)) await prisma.studentProfile.create({ data: { studentId, ...toDb("profile", p) } as never });
+  await prisma.guardian.createMany({ data: cur.guardians as never });
+  await prisma.contactLog.createMany({ data: cur.contacts.map((c) => ({ ...toDb("contact", c), authorId: teacher.id })) as never });
+  await prisma.curatorTask.createMany({ data: cur.tasks.map((t) => ({ ...toDb("task", t), groupId: g2F1.id })) as never });
+  await prisma.classEvent.createMany({ data: cur.events.map((e) => ({ ...toDb("event", e), groupId: g2F1.id })) as never });
+  await prisma.achievement.createMany({ data: cur.achievements.map((a) => toDb("achievement", a)) as never });
+  await prisma.bookRead.createMany({ data: cur.books.map((b) => toDb("book", b)) as never });
+  await prisma.testResult.createMany({ data: cur.tests.map((t) => toDb("test", t)) as never });
+  await prisma.reflection.createMany({ data: cur.reflections.map((r) => ({ ...r, createdAt: new Date(`${r.createdAt}T09:00:00.000Z`) })) as never });
 
   console.log(`Seeded ${students.length} students, ${lessons.length} lessons, ${attendance.length} attendance, ${gradesData.length} grades.`);
 }

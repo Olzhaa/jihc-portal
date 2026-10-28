@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from "react";
+import { groupCourse, isoOf } from "@/lib/curator";
+import { demoCuratorData } from "@/lib/curator-demo";
 import type { AttendanceStatus, BookingStatus, CertificateStatus, GradeType, ResourceType, Role, SyllabusStatus } from "@prisma/client";
 
 /**
@@ -7,7 +9,7 @@ import type { AttendanceStatus, BookingStatus, CertificateStatus, GradeType, Res
  */
 
 export type User = { id: string; email: string | null; name: string; role: Role; iin: string | null; groupId: string | null; parentId: string | null; pin: string | null };
-export type Group = { id: string; name: string };
+export type Group = { id: string; name: string; curatorId: string | null };
 export type Course = { id: string; code: string | null; title: string; color: string };
 export type Room = { id: string; name: string; type: ResourceType; capacity: number | null; managerId: string | null };
 export type Lesson = { id: string; groupId: string; courseId: string; teacherId: string; roomId: string; dayOfWeek: number; startPeriod: number; endPeriod: number };
@@ -20,6 +22,13 @@ export type Certificate = { id: string; studentId: string; reviewerId: string | 
 export type Announcement = { id: string; title: string; content: string; authorId: string; important: boolean; groupIds: string[]; createdAt: Date };
 export type Rule = { id: string; title: string; content: string; authorId: string; createdAt: Date; updatedAt: Date };
 export type ParentLink = { parentId: string; childId: string };
+/** Curator workspace records, in the same plain shape the shared curator pages use. */
+export type CuratorRow = Record<string, unknown> & { id: string };
+export type CuratorData = {
+  profiles: Record<string, Record<string, unknown>>;
+  guardians: CuratorRow[]; contacts: CuratorRow[]; tasks: CuratorRow[]; events: CuratorRow[];
+  achievements: CuratorRow[]; books: CuratorRow[]; tests: CuratorRow[]; reflections: CuratorRow[];
+};
 export type Slip = { student: string; group: string; parentName: string; parentId: string; pin: string };
 
 export type Db = {
@@ -27,9 +36,10 @@ export type Db = {
   users: User[]; groups: Group[]; courses: Course[]; rooms: Room[]; lessons: Lesson[];
   attendance: Attendance[]; grades: Grade[]; syllabi: Syllabus[]; bookings: Booking[];
   certificates: Certificate[]; announcements: Announcement[]; rules: Rule[]; parentLinks: ParentLink[];
+  curator: CuratorData;
 };
 
-const VERSION = 1;
+const VERSION = 2;
 const KEY = "jihc-demo-db";
 const SESSION_KEY = "jihc-demo-user";
 
@@ -51,8 +61,9 @@ function generate(): Db {
     return rand() < 0.5 ? `${pick(MALE)} ${sn}${v ? "ев" : "ов"}` : `${pick(FEMALE)} ${sn}${v ? "ева" : "ова"}`;
   };
 
-  const db: Db = { version: VERSION, users: [], groups: [], courses: [], rooms: [], lessons: [], attendance: [], grades: [], syllabi: [], bookings: [], certificates: [], announcements: [], rules: [], parentLinks: [] };
-  const groups = ["2F-1", "2D-1", "3F-3", "1P-2"].map((name) => ({ id: uid(), name }));
+  const db: Db = { version: VERSION, users: [], groups: [], courses: [], rooms: [], lessons: [], attendance: [], grades: [], syllabi: [], bookings: [], certificates: [], announcements: [], rules: [], parentLinks: [],
+    curator: { profiles: {}, guardians: [], contacts: [], tasks: [], events: [], achievements: [], books: [], tests: [], reflections: [] } };
+  const groups: Group[] = ["2F-1", "2D-1", "3F-3", "1P-2"].map((name) => ({ id: uid(), name, curatorId: null }));
   db.groups = groups;
   const [g2F1, g2D1, g3F3, g1P2] = groups;
 
@@ -177,6 +188,23 @@ function generate(): Db {
     { id: uid(), authorId: zavuch.id, createdAt: now, updatedAt: now, title: "Ішкі тәртіп ережелері", content: "1. Сабаққа кешікпеу.\n2. Іскерлік киім үлгісін сақтау.\n3. Колледж мүлкіне ұқыпты қарау.\n4. Сабақ кезінде телефонды дыбыссыз режимде ұстау." },
     { id: uid(), authorId: zavuch.id, createdAt: now, updatedAt: now, title: "Сабақ босатуды рәсімдеу", content: "Ауырған жағдайда студент 3 жұмыс күні ішінде медициналық анықтаманы порталға жүктеуі тиіс. Завуч растағаннан кейін босатылған күндер «себепті» деп белгіленеді." },
   ];
+
+  // Curators: the demo teacher curates 2F-1 (filled-in workspace), Ажар Нұрғали curates 3F-3.
+  g2F1.curatorId = teacher.id;
+  g3F3.curatorId = t2.id;
+  const cur = demoCuratorData(students.filter((x) => x.groupId === g2F1.id), groupCourse(g2F1.name), isoOf(new Date()), rand);
+  const withId = (r: Record<string, unknown>) => ({ ...r, id: uid() });
+  db.curator = {
+    profiles: cur.profiles,
+    guardians: cur.guardians.map(withId),
+    contacts: cur.contacts.map((c) => ({ ...withId(c), authorId: teacher.id })),
+    tasks: cur.tasks.map((t) => ({ ...withId(t), groupId: g2F1.id })),
+    events: cur.events.map((e) => ({ ...withId(e), groupId: g2F1.id })),
+    achievements: cur.achievements.map(withId),
+    books: cur.books.map(withId),
+    tests: cur.tests.map(withId),
+    reflections: cur.reflections.map(withId),
+  };
   return db;
 }
 
@@ -186,7 +214,7 @@ function load(): Db {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
-      const parsed = JSON.parse(raw, (k, v) => (DATE_FIELDS.has(k) && typeof v === "string" ? new Date(v) : v)) as Db;
+      const parsed = JSON.parse(raw, (k, v) => (DATE_FIELDS.has(k) && typeof v === "string" && v.length > 10 ? new Date(v) : v)) as Db;
       if (parsed.version === VERSION) return parsed;
     }
   } catch {}
