@@ -172,9 +172,6 @@ function UtilityBar() {
           <a href={href("/", "tour")} className="hover:text-brand-light">
             Виртуалды тур
           </a>
-          <a href={PORTAL_URL} className="hover:text-brand-light">
-            Студент порталы
-          </a>
           <a href={contacts.instagram} target="_blank" rel="noreferrer" className="hover:text-brand-light">
             Instagram
           </a>
@@ -207,7 +204,6 @@ function useNav() {
     { label: "Колледж туралы", href: href("/about"), active: path === "/about" || path === "/staff" },
     { label: "Мамандықтар", href: href("/programs"), active: path === "/programs" },
     { label: "Талапкерге", href: href("/", "admission"), active: false },
-    { label: "Студентке", href: PORTAL_URL, active: false },
     { label: "Жаңалықтар", href: href("/news"), active: path === "/news" },
     { label: "Байланыс", href: href(path, "contacts"), active: false },
   ];
@@ -232,7 +228,7 @@ export function Header() {
       <div className="border-b border-border bg-white">
         <div className={`${container} flex items-center justify-between gap-6 py-[18px]`}>
           <Brand />
-          <nav className="hidden items-center gap-8 xl:flex">
+          <nav className="hidden items-center gap-6 whitespace-nowrap xl:flex 2xl:gap-8">
             {nav.map((n) => (
               <a key={n.label} href={n.href} className="flex flex-col items-center gap-1.5">
                 <span className={`text-[15px] ${n.active ? "font-semibold text-brand-strong" : "font-medium text-fg hover:text-brand-strong"}`}>{n.label}</span>
@@ -241,14 +237,20 @@ export function Header() {
             ))}
           </nav>
           <div className="flex items-center gap-4">
-            <div className="hidden sm:block">
+            <div className="hidden sm:block xl:max-[1399px]:hidden">
               <LangSwitch />
             </div>
             <a
               href={href("/", "admission")}
-              className="hidden rounded-xl bg-brand-strong px-5 py-3 text-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(10,20,51,0.25)] hover:bg-[#1d4ed8] sm:block"
+              className="hidden whitespace-nowrap rounded-xl bg-brand-strong px-5 py-3 text-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(10,20,51,0.25)] hover:bg-[#1d4ed8] sm:block"
             >
               Құжат тапсыру
+            </a>
+            <a
+              href={PORTAL_URL}
+              className="hidden whitespace-nowrap rounded-xl border-[1.5px] border-brand-strong bg-white px-5 py-3 text-[15px] font-semibold text-brand-strong hover:bg-brand-tint sm:block"
+            >
+              Портал
             </a>
             <button
               className="flex size-11 items-center justify-center rounded-xl border border-border xl:hidden"
@@ -273,6 +275,9 @@ export function Header() {
             ))}
             <a href={href("/", "admission")} onClick={() => setOpen(false)} className="mt-2 rounded-xl bg-brand-strong py-3 text-center font-semibold text-white sm:hidden">
               Құжат тапсыру
+            </a>
+            <a href={PORTAL_URL} className="mt-2 rounded-xl border-[1.5px] border-brand-strong py-3 text-center font-semibold text-brand-strong sm:hidden">
+              Портал
             </a>
           </nav>
         )}
@@ -382,7 +387,7 @@ export function Footer() {
         ["Біз туралы", href("/about")],
         ["Әкімшілік", href("/about", "leadership")],
         ["Оқытушылар", href("/staff")],
-        ["Студент порталы", PORTAL_URL],
+        ["Портал", PORTAL_URL],
       ],
     },
     {
