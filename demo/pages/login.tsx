@@ -1,3 +1,5 @@
+import { ArrowLeft } from "lucide-react";
+import { SITE_URL } from "@/lib/site";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -21,7 +23,11 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0f1e3d] via-[#1e3a8a] to-[#1d4ed8] p-4">
-      <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-2xl">
+      <div className="w-full max-w-md">
+        <a href={SITE_URL} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-blue-100 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> Басты бетке
+        </a>
+        <div className="rounded-2xl bg-card p-8 shadow-2xl">
         <div className="mb-6 text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-xl font-bold text-primary-foreground">J</div>
           <h1 className="text-2xl font-bold">JIHC Portal</h1>
@@ -88,6 +94,7 @@ export function LoginPage() {
               Демо деректерді бастапқы күйге қайтару
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>

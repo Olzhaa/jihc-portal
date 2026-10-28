@@ -8,6 +8,8 @@ export default defineConfig({
   root: "demo",
   base: "./",
   plugins: [react(), tailwindcss()],
+  // On Pages the college website sits one level up from the demo (/my/).
+  define: { "process.env.NEXT_PUBLIC_SITE_URL": JSON.stringify("../") },
   resolve: {
     alias: [
       { find: "next/link", replacement: path.resolve(__dirname, "demo/shims/next-link.tsx") },

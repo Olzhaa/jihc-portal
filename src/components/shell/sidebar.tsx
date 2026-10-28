@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import {
-  BarChart3, BookOpen, CalendarDays, Check, DoorOpen, FileText, Gauge, Grid3x3, Home, KeyRound, LogOut,
+  ArrowLeft, BarChart3, BookOpen, CalendarDays, Check, DoorOpen, FileText, Gauge, Grid3x3, Home, KeyRound, LogOut,
   Megaphone, Menu, Moon, Scale, Stethoscope, Sun, Users, X,
 } from "lucide-react";
 import type { NavGroup } from "./nav";
 import { cn } from "@/lib/utils";
+import { SITE_URL } from "@/lib/site";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   home: Home, calendar: CalendarDays, book: BookOpen, file: FileText, door: DoorOpen, chart: BarChart3,
@@ -87,12 +88,14 @@ export function Sidebar({
         <div className="border-t border-white/10 p-4">
           <div className="truncate text-sm font-medium text-white">{userName}</div>
           <div className="text-xs">{roleLabel}</div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="mt-3 flex items-center gap-2 text-xs hover:text-white"
-          >
-            <LogOut className="h-3.5 w-3.5" /> Шығу
-          </button>
+          <div className="mt-3 flex items-center justify-between">
+            <a href={SITE_URL} className="flex items-center gap-2 text-xs hover:text-white">
+              <ArrowLeft className="h-3.5 w-3.5" /> Колледж сайты
+            </a>
+            <button onClick={() => signOut({ callbackUrl: "/login" })} className="flex items-center gap-2 text-xs hover:text-white">
+              <LogOut className="h-3.5 w-3.5" /> Шығу
+            </button>
+          </div>
         </div>
       </aside>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />}
