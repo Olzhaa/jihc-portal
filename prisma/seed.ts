@@ -2,6 +2,9 @@ import { PrismaClient, type AttendanceStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { KIND_FIELDS, dateFields, groupCourse, isoToday, type RecordKind } from "../src/lib/curator";
 import { demoCuratorData } from "../src/lib/curator-demo";
+import { suggestSnationCode } from "../src/lib/assessment";
+import { GRAPH_PLAN, IKT_DETAILS, IKT_PLAN } from "../src/lib/demo-plans";
+import { totals } from "../src/lib/syllabus";
 
 const prisma = new PrismaClient();
 
@@ -23,13 +26,13 @@ async function main() {
   await prisma.$transaction([
     prisma.contactLog.deleteMany(), prisma.guardian.deleteMany(), prisma.studentProfile.deleteMany(), prisma.achievement.deleteMany(),
     prisma.bookRead.deleteMany(), prisma.testResult.deleteMany(), prisma.reflection.deleteMany(), prisma.curatorTask.deleteMany(), prisma.classEvent.deleteMany(),
-    prisma.attendance.deleteMany(), prisma.grade.deleteMany(), prisma.medicalCertificate.deleteMany(),
-    prisma.booking.deleteMany(), prisma.syllabus.deleteMany(), prisma.schedule.deleteMany(),
+    prisma.attendance.deleteMany(), prisma.grade.deleteMany(), prisma.assignment.deleteMany(), prisma.medicalCertificate.deleteMany(),
+    prisma.booking.deleteMany(), prisma.syllabus.deleteMany(), prisma.lessonRecord.deleteMany(), prisma.schedule.deleteMany(),
     prisma.announcement.deleteMany(), prisma.rule.deleteMany(), prisma.parentLink.deleteMany(),
     prisma.user.deleteMany(), prisma.group.deleteMany(), prisma.course.deleteMany(), prisma.room.deleteMany(),
   ]);
 
-  const groups = await Promise.all(["2F-1", "2D-1", "3F-3", "1P-2"].map((name) => prisma.group.create({ data: { name } })));
+  const groups = await Promise.all(["2F-1", "2D-1", "3F-3", "1P-2"].map((name) => prisma.group.create({ data: { name, snationCode: suggestSnationCode(name) } })));
   const [g2F1, g2D1, g3F3, g1P2] = groups;
 
   const rooms = await Promise.all(
@@ -127,10 +130,11 @@ async function main() {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   const attendance: { studentId: string; courseId: string; scheduleId: string; markedById: string; date: Date; status: AttendanceStatus }[] = [];
-  const gradesData: { studentId: string; courseId: string; scheduleId: string; givenById: string; value: number; date: Date; type: "CURRENT" | "MIDTERM" }[] = [];
+  const gradesData: { studentId: string; courseId: string; scheduleId: string | null; assignmentId?: string; givenById: string; value: number; date: Date; type: "CURRENT" | "MIDTERM"; weight: number; workType: string }[] = [];
   const skill = new Map(students.map((st) => [st.id, 55 + rand() * 40]));
   skill.set(demoStudent.id, 84);
   const truant = new Set(students.filter(() => rand() < 0.12).map((st) => st.id));
+  const controlWork = new Map<string, string>();
 
   for (let back = 28; back >= 1; back--) {
     const date = new Date(today);
@@ -140,11 +144,28 @@ async function main() {
       for (const st of students.filter((x) => x.groupId === l.groupId)) {
         const r = rand();
         const absentP = truant.has(st.id) ? 0.3 : 0.06;
-        const status: AttendanceStatus = r < absentP ? "ABSENT" : r < absentP + 0.05 ? "LATE" : r < absentP + 0.07 ? "EXCUSED" : "PRESENT";
+        const status: AttendanceStatus =
+          r < absentP ? "ABSENT" : r < absentP + 0.05 ? "LATE" : r < absentP + 0.07 ? "EXCUSED" : r < absentP + 0.08 ? "LEFT_EARLY" : "PRESENT";
         attendance.push({ studentId: st.id, courseId: l.courseId, scheduleId: l.id, markedById: l.teacherId, date, status });
         if (status !== "ABSENT" && status !== "EXCUSED" && rand() < 0.45) {
           const value = Math.round(Math.min(100, Math.max(30, skill.get(st.id)! + (rand() - 0.5) * 25)));
-          gradesData.push({ studentId: st.id, courseId: l.courseId, scheduleId: l.id, givenById: l.teacherId, value, date, type: back === 14 ? "MIDTERM" : "CURRENT" });
+          const control = back === 14;
+          // The control work is an EduPage-style assignment; everyday grades come from the journal.
+          let assignmentId: string | undefined;
+          if (control) {
+            const key = `${l.groupId}:${l.courseId}:${+date}`;
+            if (!controlWork.has(key)) {
+              const a = await prisma.assignment.create({
+                data: { courseId: l.courseId, groupId: l.groupId, createdById: l.teacherId, title: "Бақылау жұмысы 1", type: "MIDTERM", weight: 2, workType: "examination", date },
+              });
+              controlWork.set(key, a.id);
+            }
+            assignmentId = controlWork.get(key);
+          }
+          gradesData.push({
+            studentId: st.id, courseId: l.courseId, scheduleId: control ? null : l.id, assignmentId, givenById: l.teacherId, value, date,
+            type: control ? "MIDTERM" : "CURRENT", weight: control ? 2 : 1, workType: control ? "examination" : rand() < 0.3 ? "laboratory" : "simple",
+          });
         }
       }
     }
@@ -164,21 +185,23 @@ async function main() {
 
   await prisma.syllabus.create({
     data: {
-      courseId: graph.id, authorId: teacher.id, title: "Graph Design — 2026-2027 оқу жылы, 1-семестр", totalHours: 72, status: "PENDING",
-      topics: [
-        { week: 1, topic: "Графикалық дизайнға кіріспе", hours: 4 },
-        { week: 2, topic: "Түс теориясы", hours: 4 },
-        { week: 3, topic: "Типографика негіздері", hours: 6 },
-        { week: 4, topic: "Adobe Illustrator: векторлық графика", hours: 8 },
-        { week: 5, topic: "Логотип жасау", hours: 8 },
-      ],
+      courseId: graph.id, authorId: teacher.id, title: "Graph Design — 2026-2027 оқу жылы, 1-семестр", status: "PENDING",
+      topics: GRAPH_PLAN, totalHours: totals(GRAPH_PLAN).all,
     },
   });
   await prisma.syllabus.create({
     data: {
-      courseId: ikt.id, authorId: teacher.id, title: "АКТ — 2-курс, 1-семестр", totalHours: 48, status: "APPROVED", reviewerId: zavuch.id,
-      topics: [{ week: 1, topic: "Цифрлық сауаттылық", hours: 4 }, { week: 2, topic: "Бұлттық сервистер", hours: 4 }],
+      courseId: ikt.id, authorId: teacher.id, title: "ЖММ 2 — 2D-1, 3-семестр", status: "APPROVED", reviewerId: zavuch.id,
+      topics: IKT_PLAN, details: IKT_DETAILS, totalHours: totals(IKT_PLAN).all,
     },
+  });
+  // Lesson topics for the ЖММ 2 lessons that already happened, taken from the plan in order.
+  const iktDays = [...new Set(attendance.filter((a) => a.courseId === ikt.id).map((a) => `${a.scheduleId}|${a.date.toISOString()}`))].sort((a, b) => a.split("|")[1].localeCompare(b.split("|")[1]));
+  await prisma.lessonRecord.createMany({
+    data: iktDays.map((k, i) => {
+      const [scheduleId, date] = k.split("|");
+      return { scheduleId, date: new Date(date), topic: IKT_PLAN[i % IKT_PLAN.length].topic, homework: i % 2 ? "Тақырып бойынша практикалық тапсырманы аяқтау" : null };
+    }),
   });
 
   const at = (d: number, h: number) => {

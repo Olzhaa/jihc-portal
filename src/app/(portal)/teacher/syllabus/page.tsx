@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { StatusBadge } from "@/components/status-badges";
 import { formatDate } from "@/lib/utils";
 import { SyllabusForm } from "./syllabus-form";
-import type { Topic } from "./actions";
+import { SyllabusExport } from "@/components/syllabus-editor";
+import { normalizeDetails, normalizeTopics } from "@/lib/syllabus";
 
 export default async function SyllabusPage() {
   const user = await requireUser(STAFF_ROLES);
@@ -19,7 +20,10 @@ export default async function SyllabusPage() {
   ]);
   return (
     <div className="space-y-6">
-      <PageHeader title="Силлабус пен сабақ жоспары" description="Тақырыптар мен сағат санын енгізіп, завучқа модерацияға жіберіңіз" />
+      <PageHeader
+        title="Силлабус пен сабақ жоспары"
+        description="Оқыту нәтижелері, тақырыптар мен сағаттарды бір рет енгізіңіз: завуч бекітеді, ал EduPage пен Smart Nation-ға дайын кесте ретінде көшіресіз"
+      />
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader>
@@ -41,9 +45,15 @@ export default async function SyllabusPage() {
               </CardHeader>
               <CardContent className="text-sm">
                 <div className="text-muted-foreground">
-                  {(s.topics as Topic[]).length} тақырып · {s.totalHours} сағат · {formatDate(s.updatedAt)}
+                  {normalizeTopics(s.topics).length} тақырып · {s.totalHours} сағат · {formatDate(s.updatedAt)}
                 </div>
                 {s.reviewNote && <div className="mt-2 rounded-md bg-muted p-2">Завуч: {s.reviewNote}</div>}
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-primary">Тақырыптар мен экспорт</summary>
+                  <div className="mt-2">
+                    <SyllabusExport title={`${s.course.title} ${s.title}`} courseTitle={s.course.title} topics={normalizeTopics(s.topics)} details={normalizeDetails(s.details)} />
+                  </div>
+                </details>
               </CardContent>
             </Card>
           ))}

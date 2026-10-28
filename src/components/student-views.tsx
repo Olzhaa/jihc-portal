@@ -33,6 +33,7 @@ const ATT_TONE = {
   PRESENT: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
   LATE: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
   ABSENT: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  LEFT_EARLY: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
   EXCUSED: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
 } as const;
 
@@ -61,30 +62,25 @@ export function GradebookView({ book }: { book: Gradebook }) {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <div className="mb-1 text-xs font-medium uppercase text-muted-foreground">Ағымдағы бағалар</div>
-              <div className="flex flex-wrap gap-1.5">
-                {row.current.length === 0 && <span className="text-sm text-muted-foreground">—</span>}
-                {row.current.map((g) => (
-                  <span
-                    key={g.id}
-                    title={formatDate(g.date)}
-                    className={cn("inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-border px-1.5 text-sm font-semibold", gradeTone(g.value))}
-                  >
-                    {g.value}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-6 text-sm">
-              <div>
-                <span className="text-muted-foreground">Аралық: </span>
-                <b>{row.midterm.map((g) => g.value).join(", ") || "—"}</b>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Сессиялық: </span>
-                <b>{row.exam.map((g) => g.value).join(", ") || "—"}</b>
-              </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {row.categories.map((c) => (
+                <div key={c.type}>
+                  <div className="mb-1 text-xs font-medium uppercase text-muted-foreground">{c.label}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {c.grades.length === 0 && <span className="text-sm text-muted-foreground">—</span>}
+                    {c.grades.map((g) => (
+                      <span
+                        key={g.id}
+                        title={`${formatDate(g.date)}${g.weight !== 1 ? ` · коэффициент ×${g.weight}` : ""}`}
+                        className={cn("inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-border px-1.5 text-sm font-semibold", gradeTone(g.value))}
+                      >
+                        {g.value}
+                        {g.weight !== 1 && <sub className="ml-0.5 text-[10px] font-normal text-muted-foreground">×{g.weight}</sub>}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
             <details>
               <summary className="cursor-pointer text-sm text-primary">Қатысу тарихы</summary>

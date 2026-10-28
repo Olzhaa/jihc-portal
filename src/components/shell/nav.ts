@@ -9,6 +9,7 @@ const teacherGroup: NavGroup = {
     { href: "/teacher", label: "Басты бет", icon: "home" },
     { href: "/teacher/schedule", label: "Менің кестем", icon: "calendar" },
     { href: "/teacher/journal", label: "Журнал", icon: "book" },
+    { href: "/teacher/gradebook", label: "Бағалар кітабы", icon: "chart" },
     { href: "/teacher/syllabus", label: "Силлабустар", icon: "file" },
     { href: "/teacher/bookings", label: "Брондау", icon: "door" },
   ],
@@ -24,6 +25,7 @@ const managementGroup: NavGroup = {
     { href: "/academic-director/bookings", label: "Брондау өтінімдері", icon: "door" },
     { href: "/academic-director/parents", label: "Ата-ана PIN-кодтары", icon: "key" },
     { href: "/academic-director/curators", label: "Кураторлар", icon: "usercheck" },
+    { href: "/academic-director/groups", label: "Топтар: EduPage ↔ Smart Nation", icon: "users" },
   ],
 };
 

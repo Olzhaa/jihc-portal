@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
-import { average, isoWeekday } from "./utils";
+import { isoWeekday } from "./utils";
 import { attendanceRate, gpaFromAverage } from "./grades";
+import { byCategory, weightedAverage } from "./assessment";
 import { lessonsForGroup } from "./schedule";
 import { announcementsFor } from "./announcements";
 
@@ -13,7 +14,7 @@ export async function studentOverview(studentId: string) {
     prisma.attendance.findMany({ where: { studentId }, select: { status: true } }),
     announcementsFor(student.groupId, 3),
   ]);
-  const avg = average(grades.map((g) => g.value));
+  const avg = weightedAverage(grades);
   return {
     student,
     lessons,
@@ -27,7 +28,7 @@ export async function studentOverview(studentId: string) {
   };
 }
 
-/** Per-course grade book: current/midterm/exam grades plus attendance. */
+/** Per-course grade book: grades by EduPage category, weighted average and attendance. */
 export async function studentGradebook(studentId: string) {
   const [grades, attendance] = await Promise.all([
     prisma.grade.findMany({ where: { studentId }, include: { course: true }, orderBy: { date: "asc" } }),
@@ -41,10 +42,8 @@ export async function studentGradebook(studentId: string) {
       const a = attendance.filter((x) => x.courseId === course.id);
       return {
         course,
-        current: g.filter((x) => x.type === "CURRENT"),
-        midterm: g.filter((x) => x.type === "MIDTERM"),
-        exam: g.filter((x) => x.type === "EXAM"),
-        avg: average(g.map((x) => x.value)),
+        categories: byCategory(g),
+        avg: weightedAverage(g),
         attendanceRate: attendanceRate(a.map((x) => x.status)),
         absences: a.filter((x) => x.status === "ABSENT").length,
         attendance: a,

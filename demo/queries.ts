@@ -1,6 +1,7 @@
 import type { TimetableLesson } from "@/components/timetable";
 import { BELLS } from "@/lib/bells";
-import { attendanceRate, gpaFromAverage } from "@/lib/grades";
+import { ATTENDED, attendanceRate, gpaFromAverage } from "@/lib/grades";
+import { byCategory, weightedAverage } from "@/lib/assessment";
 import { average, isoWeekday } from "@/lib/utils";
 import type { Db, Lesson } from "./store";
 
@@ -68,7 +69,7 @@ export function studentOverview(db: Db, studentId: string) {
   const lessons = student.groupId ? lessonsForGroup(db, student.groupId) : [];
   const grades = db.grades.filter((g) => g.studentId === studentId).sort((a, b) => +b.date - +a.date);
   const attendance = db.attendance.filter((a) => a.studentId === studentId);
-  const avg = average(grades.map((g) => g.value));
+  const avg = weightedAverage(grades);
   return {
     student: { ...student, group },
     lessons,
@@ -93,10 +94,8 @@ export function studentGradebook(db: Db, studentId: string) {
       const a = attendance.filter((x) => x.courseId === id);
       return {
         course,
-        current: g.filter((x) => x.type === "CURRENT"),
-        midterm: g.filter((x) => x.type === "MIDTERM"),
-        exam: g.filter((x) => x.type === "EXAM"),
-        avg: average(g.map((x) => x.value)),
+        categories: byCategory(g),
+        avg: weightedAverage(g),
         attendanceRate: attendanceRate(a.map((x) => x.status)),
         absences: a.filter((x) => x.status === "ABSENT").length,
         attendance: a,
@@ -150,7 +149,7 @@ export function weeklyAttendance(db: Db, weeks = 8) {
     const k = +d;
     const b = buckets.get(k) ?? { t: 0, a: 0 };
     b.t++;
-    if (r.status === "PRESENT" || r.status === "LATE") b.a++;
+    if (ATTENDED.includes(r.status)) b.a++;
     buckets.set(k, b);
   }
   return [...buckets].sort((a, b) => a[0] - b[0]).map(([k, b]) => ({ week: new Date(k), rate: (b.a / b.t) * 100 }));

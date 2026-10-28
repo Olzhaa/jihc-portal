@@ -7,8 +7,8 @@ import { StatusBadge } from "@/components/status-badges";
 import { ReviewButtons } from "@/components/review-buttons";
 import { formatDate } from "@/lib/utils";
 import { reviewSyllabus } from "../actions";
-
-type Topic = { week: number; topic: string; hours: number };
+import { SyllabusExport } from "@/components/syllabus-editor";
+import { normalizeDetails, normalizeTopics } from "@/lib/syllabus";
 
 export default async function SyllabusModeration() {
   await requireUser(MANAGER_ROLES);
@@ -37,18 +37,11 @@ export default async function SyllabusModeration() {
           <CardContent className="space-y-3">
             <details open={s.status === "PENDING"}>
               <summary className="cursor-pointer text-sm text-primary">
-                {(s.topics as Topic[]).length} тақырып · {s.totalHours} сағат
+                {normalizeTopics(s.topics).length} тақырып · {s.totalHours} сағат
               </summary>
-              <ol className="mt-2 space-y-1 text-sm">
-                {(s.topics as Topic[]).map((t) => (
-                  <li key={t.week} className="flex justify-between gap-3 border-b border-border py-1">
-                    <span>
-                      <span className="text-muted-foreground">{t.week}.</span> {t.topic}
-                    </span>
-                    <span className="shrink-0 text-muted-foreground">{t.hours} сағ</span>
-                  </li>
-                ))}
-              </ol>
+              <div className="mt-2">
+                <SyllabusExport title={`${s.course.title} ${s.title}`} courseTitle={s.course.title} topics={normalizeTopics(s.topics)} details={normalizeDetails(s.details)} />
+              </div>
             </details>
             {s.status === "PENDING" ? (
               <ReviewButtons action={reviewSyllabus.bind(null, s.id)} />
