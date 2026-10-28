@@ -6,6 +6,7 @@ import { Input, Label } from "@/components/ui/input";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/roles";
 import { login, resetDemo, useDb } from "../store";
 import { navigate } from "../router";
+import { JihcLogo } from "@/components/jihc-logo";
 
 const DEMO_EMAILS = ["student@jihc.edu.kz", "teacher@jihc.edu.kz", "zavuch@jihc.edu.kz", "director@jihc.edu.kz", "parent@demo.local"];
 
@@ -29,7 +30,7 @@ export function LoginPage() {
         </a>
         <div className="rounded-2xl bg-card p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-xl font-bold text-primary-foreground">J</div>
+          <JihcLogo className="mx-auto mb-3 h-20 w-20 text-foreground" />
           <h1 className="text-2xl font-bold">JIHC Portal</h1>
           <p className="text-sm text-muted-foreground">Жамбыл инновациялық жоғары колледжі</p>
           <p className="mt-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">

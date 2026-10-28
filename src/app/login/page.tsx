@@ -5,6 +5,7 @@ import { getSessionUser, demoLoginEnabled } from "@/lib/auth";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { LoginForms } from "./login-forms";
+import { JihcLogo } from "@/components/jihc-logo";
 
 const ERRORS: Record<string, string> = {
   domain: "Тек @jihc.edu.kz корпоративтік поштасымен кіруге болады.",
@@ -32,9 +33,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </a>
         <div className="rounded-2xl bg-card p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-xl font-bold text-primary-foreground">
-            J
-          </div>
+          <JihcLogo className="mx-auto mb-3 h-20 w-20 text-foreground" />
           <h1 className="text-2xl font-bold">JIHC Portal</h1>
           <p className="text-sm text-muted-foreground">Жамбыл инновациялық жоғары колледжі</p>
         </div>

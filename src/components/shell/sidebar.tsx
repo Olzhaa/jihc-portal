@@ -11,6 +11,7 @@ import {
 import type { NavGroup } from "./nav";
 import { cn } from "@/lib/utils";
 import { SITE_URL } from "@/lib/site";
+import { JihcLogo } from "@/components/jihc-logo";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   home: Home, calendar: CalendarDays, book: BookOpen, file: FileText, door: DoorOpen, chart: BarChart3,
@@ -52,7 +53,7 @@ export function Sidebar({
         )}
       >
         <div className="flex h-16 items-center gap-3 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-white">J</div>
+          <JihcLogo className="h-10 w-10 shrink-0 text-white" />
           <div className="leading-tight">
             <div className="font-semibold text-white">JIHC Portal</div>
             <div className="text-xs">my.jihc.edu.kz</div>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { contacts, PORTAL_URL, type NewsItem } from "./content";
-import { Emblem, Icon, Rings, type IconName } from "./icons";
+import { JihcLogo } from "../src/components/jihc-logo";
+import { Icon, Rings, type IconName } from "./icons";
 import { href, useRoute } from "./router";
 
 export const container = "mx-auto w-full max-w-[1440px] px-4 sm:px-8 lg:px-[120px]";
@@ -187,9 +188,7 @@ function UtilityBar() {
 export function Brand({ light = false }: { light?: boolean }) {
   return (
     <a href={href("/")} className="flex items-center gap-3">
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-[13px] bg-brand shadow-[0_4px_12px_rgba(10,20,51,0.18)]">
-        <Emblem />
-      </span>
+      <JihcLogo className={`size-14 shrink-0 ${light ? "text-white" : "text-fg"}`} />
       <span className="leading-normal">
         <span className={`block text-[22px] font-extrabold tracking-[-0.22px] ${light ? "text-white" : "text-fg"}`}>JIHC</span>
         <span className={`block text-[13px] font-medium ${light ? "text-white" : "text-muted-fg"}`}>College</span>
