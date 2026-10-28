@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@source "./";
+
+:root {
+  --primary: #1d4ed8;
+  --navy: #0f1e3d;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-navy: var(--navy);
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px;
+}
+
+body {
+  background: #ffffff;
+  color: #0f172a;
+}

@@ -1,4 +1,4 @@
-name: Deploy demo to GitHub Pages
+name: Deploy site and portal demo to GitHub Pages
 
 on:
   push:
@@ -27,10 +27,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # College website at the root, portal demo under /my/
+      - run: npm run site:build
       - run: npm run demo:build
+      - run: cp -r demo-dist site-dist/my
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: demo-dist
+          path: site-dist
   deploy:
     needs: build
     runs-on: ubuntu-latest
