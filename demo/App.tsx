@@ -1,9 +1,9 @@
 import type { ComponentType } from "react";
 import { Sidebar } from "@/components/shell/sidebar";
-import { NAV } from "@/components/shell/nav";
+import { navFor } from "@/components/shell/nav";
 import { ROLE_HOME, ROLE_LABEL, SECTION_ROLES } from "@/lib/roles";
 import { useRoute } from "./router";
-import { useSessionUser } from "./store";
+import { useDb, useSessionUser } from "./store";
 import { LoginPage } from "./pages/login";
 import * as student from "./pages/student";
 import * as teacher from "./pages/teacher";
@@ -11,23 +11,33 @@ import * as manager from "./pages/manager";
 import * as director from "./pages/director";
 import * as parent from "./pages/parent";
 import * as common from "./pages/common";
+import * as curator from "./pages/curator";
 
 const ROUTES: Record<string, ComponentType> = {
   "/student": student.Dashboard,
   "/student/schedule": student.Schedule,
   "/student/grades": student.Grades,
   "/student/certificates": student.Certificates,
+  "/student/reflection": curator.Reflection,
   "/teacher": teacher.Dashboard,
   "/teacher/schedule": teacher.Schedule,
   "/teacher/journal": teacher.Journal,
   "/teacher/syllabus": teacher.Syllabus,
   "/teacher/bookings": teacher.Bookings,
+  "/teacher/curator": curator.Home,
+  "/teacher/curator/students": curator.Students,
+  "/teacher/curator/students/view": curator.Student,
+  "/teacher/curator/contacts": curator.Contacts,
+  "/teacher/curator/cycle": curator.Cycle,
+  "/teacher/curator/events": curator.Events,
+  "/teacher/curator/guides": curator.Guides,
   "/academic-director": manager.Stats,
   "/academic-director/timetable": manager.Timetable,
   "/academic-director/certificates": manager.Certificates,
   "/academic-director/syllabi": manager.Syllabi,
   "/academic-director/bookings": manager.Bookings,
   "/academic-director/parents": manager.ParentPins,
+  "/academic-director/curators": curator.Curators,
   "/director": director.Dashboard,
   "/director/users": director.Users,
   "/parent": parent.Home,
@@ -39,6 +49,7 @@ const ROUTES: Record<string, ComponentType> = {
 export function App() {
   const { path } = useRoute();
   const user = useSessionUser();
+  const db = useDb();
 
   if (!user || path === "/login") return <LoginPage />;
 
@@ -49,7 +60,7 @@ export function App() {
     return null;
   }
   return (
-    <Sidebar groups={NAV[user.role]} userName={user.name} roleLabel={ROLE_LABEL[user.role]}>
+    <Sidebar groups={navFor(user.role, curator.isCurator(db, user.id))} userName={user.name} roleLabel={ROLE_LABEL[user.role]}>
       <Page key={path} />
     </Sidebar>
   );

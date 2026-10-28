@@ -86,6 +86,17 @@ model User {
   announcements    Announcement[]
   rules            Rule[]
   managedRooms     Room[]               @relation("RoomManager")
+
+  // Куратор
+  curatedGroups   Group[]         @relation("GroupCurator")
+  studentProfile  StudentProfile?
+  guardians       Guardian[]
+  contactLogs     ContactLog[]    @relation("ContactStudent")
+  writtenContacts ContactLog[]    @relation("ContactAuthor")
+  achievements    Achievement[]
+  books           BookRead[]
+  testResults     TestResult[]
+  reflections     Reflection[]
 }
 
 model ParentLink {
@@ -100,9 +111,13 @@ model ParentLink {
 model Group {
   id            String         @id @default(uuid())
   name          String         @unique // e.g., "CS-22-01"
+  curatorId     String? // топ кураторы (завуч тағайындайды)
+  curator       User?          @relation("GroupCurator", fields: [curatorId], references: [id], onDelete: SetNull)
   students      User[]
   schedule      Schedule[]
   announcements Announcement[] @relation("AnnouncementGroups")
+  curatorTasks  CuratorTask[]
+  classEvents   ClassEvent[]
 }
 
 model Course {
@@ -117,14 +132,14 @@ model Course {
 }
 
 model Room {
-  id       String       @id @default(uuid())
-  name     String       @unique // "304 Кабинет", "Акт залы"
-  type     ResourceType
-  capacity Int?
+  id        String       @id @default(uuid())
+  name      String       @unique // "304 Кабинет", "Акт залы"
+  type      ResourceType
+  capacity  Int?
   managerId String? // жауапты мұғалім: арнайы бөлмелердің өтінімдерін бекітеді
-  manager   User?   @relation("RoomManager", fields: [managerId], references: [id])
-  schedule Schedule[]
-  bookings Booking[]
+  manager   User?        @relation("RoomManager", fields: [managerId], references: [id])
+  schedule  Schedule[]
+  bookings  Booking[]
 }
 
 model Schedule {
@@ -257,4 +272,205 @@ model Rule {
   createdAt DateTime @default(now())
 
   author User @relation(fields: [authorId], references: [id])
+}
+
+// --- Куратор жұмыс кеңістігі (src/lib/curator.ts өрістерімен сәйкес) ---
+// Таңдау өрістері қазақша мәтін ретінде сақталады; тізімдер src/lib/curator.ts ішінде.
+
+model StudentProfile {
+  studentId        String    @id
+  birthDate        DateTime? @db.Date
+  gender           String?
+  phone            String?
+  city             String?
+  address          String?
+  siblings         String?
+  activity         String? // Белсенді | Орташа | Тұйық — назар керек
+  club             String?
+  hobbies          String[]
+  strongSubjects   String?
+  weakSubjects     String?
+  goal             String?
+  psychNote        String? // қысқа түйін ғана
+  mbti             String?
+  gallup           String[] // Top-5
+  gardner          String[]
+  designDirection  String?
+  futurePlan       String?
+  targetUniversity String?
+  targetSpecialty  String?
+  studyCountries   String[]
+  admissionStatus  String?
+  ieltsScore       Float?
+  ieltsDate        DateTime? @db.Date
+  portfolioUrl     String?
+  practicePlace    String?
+  alumniNow        String?
+  socialStatus     String?
+  parentConsent    Boolean   @default(false)
+  homeVisited      Boolean   @default(false)
+  homeVisitDate    DateTime? @db.Date
+  note             String?
+  updatedAt        DateTime  @updatedAt
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+// Куратордың ата-ана туралы жазбасы (порталға кіретін PARENT аккаунтынан бөлек)
+model Guardian {
+  id             String  @id @default(uuid())
+  studentId      String
+  name           String
+  relation       String?
+  phone          String?
+  phone2         String?
+  email          String?
+  workplace      String?
+  position       String?
+  familyStatus   String?
+  responsiveness String?
+  note           String?
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+// Байланыс журналы: студентпен немесе ата-анамен әр сөйлесу
+model ContactLog {
+  id            String    @id @default(uuid())
+  studentId     String
+  authorId      String
+  date          DateTime  @db.Date
+  withWhom      String // Студент | Ата-ана | Студент + ата-ана
+  summary       String
+  topics        String[]
+  mood          String?
+  durationMin   Float?
+  discussed     String?
+  agreedStep    String?
+  followUpDate  DateTime? @db.Date
+  agreementDone Boolean   @default(false)
+  notifyParent  Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  student User @relation("ContactStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  author  User @relation("ContactAuthor", fields: [authorId], references: [id])
+
+  @@index([studentId, date])
+}
+
+// Куратор циклы: топтың қайталанатын міндеттері
+model CuratorTask {
+  id        String    @id @default(uuid())
+  groupId   String
+  title     String
+  frequency String
+  course    String? // бос болса — барлық курсқа ортақ
+  logIn     String?
+  source    String?
+  nextDue   DateTime? @db.Date
+  done      Boolean   @default(false)
+  order     Int       @default(0)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+}
+
+// Іс-шаралар мен тәрбие сағаттары
+model ClassEvent {
+  id               String    @id @default(uuid())
+  groupId          String
+  title            String
+  type             String?
+  format           String?
+  date             DateTime? @db.Date
+  place            String?
+  status           String
+  budget           Float?
+  directions       String[]
+  responsibleIds   String[] // жауапты студенттердің id-лері
+  goal             String?
+  considerations   String?
+  expectedResult   String?
+  analysis         String?
+  feedback         String?
+  parentPermission Boolean   @default(false)
+  parentsAttend    Boolean   @default(false)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, date])
+}
+
+model Achievement {
+  id             String    @id @default(uuid())
+  studentId      String
+  title          String
+  type           String?
+  level          String?
+  result         String?
+  date           DateTime? @db.Date
+  parentNotified Boolean   @default(false)
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+model BookRead {
+  id         String    @id @default(uuid())
+  studentId  String
+  title      String
+  author     String?
+  status     String
+  language   String?
+  genres     String[]
+  pages      Float?
+  rating     String?
+  startedAt  DateTime? @db.Date
+  finishedAt DateTime? @db.Date
+  review     String?
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+// Психологиялық және кәсіби тесттер. «Тек психолог» болса нәтиже сақталмайды.
+model TestResult {
+  id          String    @id @default(uuid())
+  studentId   String
+  test        String
+  date        DateTime? @db.Date
+  conductedBy String?
+  privacy     String
+  result      String?
+  discussed   Boolean   @default(false)
+  agreedStep  String?
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+// Студенттің семестрлік өзін-өзі бағалауы (студент өзі толтырады)
+model Reflection {
+  id              String   @id @default(uuid())
+  studentId       String
+  semester        String
+  pride           String
+  difficulty      String?
+  helpNeeded      String?
+  nextGoal        String?
+  diligence       String
+  responsibility  String
+  selfDevelopment String
+  designInterest  String?
+  createdAt       DateTime @default(now())
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
 }

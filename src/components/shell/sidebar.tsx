@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import {
-  ArrowLeft, BarChart3, BookOpen, CalendarDays, Check, DoorOpen, FileText, Gauge, Grid3x3, Home, KeyRound, LogOut,
-  Megaphone, Menu, Moon, Scale, Stethoscope, Sun, Users, X,
+  ArrowLeft, BarChart3, BookOpen, CalendarDays, Check, Compass, DoorOpen, FileText, Gauge, Grid3x3, Home, Info, KeyRound, LogOut,
+  Megaphone, Menu, MessagesSquare, Moon, PartyPopper, Repeat, Scale, Sparkles, Stethoscope, Sun, UserCheck, Users, X,
 } from "lucide-react";
 import type { NavGroup } from "./nav";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { SITE_URL } from "@/lib/site";
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   home: Home, calendar: CalendarDays, book: BookOpen, file: FileText, door: DoorOpen, chart: BarChart3,
   grid: Grid3x3, stethoscope: Stethoscope, check: Check, megaphone: Megaphone, scale: Scale, gauge: Gauge, users: Users, key: KeyRound,
+  compass: Compass, message: MessagesSquare, repeat: Repeat, party: PartyPopper, info: Info, sparkles: Sparkles, usercheck: UserCheck,
 };
 
 export function Sidebar({
