@@ -12,6 +12,7 @@ import * as director from "./pages/director";
 import * as parent from "./pages/parent";
 import * as common from "./pages/common";
 import * as curator from "./pages/curator";
+import * as admin from "./pages/admin";
 
 const ROUTES: Record<string, ComponentType> = {
   "/student": student.Dashboard,
@@ -42,6 +43,10 @@ const ROUTES: Record<string, ComponentType> = {
   "/academic-director/curators": curator.Curators,
   "/director": director.Dashboard,
   "/director/users": director.Users,
+  "/admin": admin.Home,
+  ...Object.fromEntries(Object.entries(admin.Entities).map(([k, Page]) => [`/admin/${k}`, Page])),
+  "/admin/import": admin.Import,
+  "/admin/audit": admin.Audit,
   "/parent": parent.Home,
   "/parent/schedule": parent.Schedule,
   "/announcements": common.Announcements,

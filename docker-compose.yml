@@ -1,6 +1,8 @@
 # Колледж серверінде іске қосу: cp .env.example .env (мәндерін толтырыңыз), сосын
 #   docker compose up -d --build
 # Демо деректер керек болса (бір рет):  docker compose exec app npm run db:seed
+# Алғашқы әкімші:  docker compose exec app npm run admin:create -- it@jihc.edu.kz "Аты-жөні"
+# Дерекқор жоспары, резервтік көшірме және қалпына келтіру: docs/DATABASE.md
 services:
   db:
     image: postgres:16
@@ -30,6 +32,28 @@ services:
       - "3000:3000"
     volumes:
       - uploads:/data/uploads
+
+  # Күн сайын 02:00-де pg_dump + справкалар архиві ./backups қалтасына (scripts/backup.sh).
+  # ./backups қалтасын серверден тыс жерге де көшіріп тұрыңыз (docs/DATABASE.md).
+  backup:
+    image: postgres:16
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: jihc
+      PGPASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      PGDATABASE: jihc
+      TZ: Asia/Almaty
+      BACKUP_AT: "02:00"
+      KEEP_DAYS: "30"
+    entrypoint: ["sh", "/backup.sh"]
+    volumes:
+      - ./scripts/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      - uploads:/uploads:ro
 
 volumes:
   pgdata:

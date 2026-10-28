@@ -15,6 +15,7 @@ enum Role {
   VICE_PRINCIPAL
   DIRECTOR
   PARENT
+  ADMIN // жүйе әкімшісі (IT): админ панельге толық қол жеткізу
 }
 
 enum CertificateStatus {
@@ -68,6 +69,7 @@ model User {
   iin       String?  @unique // ЖСН (студенттер үшін)
   groupId   String?
   group     Group?   @relation(fields: [groupId], references: [id])
+  active    Boolean  @default(true) // false: кете алмайды (бітірген студент, жұмыстан кеткен мұғалім), деректері сақталады
   createdAt DateTime @default(now())
 
   // Ата-ана ↔ бала байланысы (бір ата-анада бірнеше бала болуы мүмкін)
@@ -101,6 +103,8 @@ model User {
   books           BookRead[]
   testResults     TestResult[]
   reflections     Reflection[]
+
+  auditLogs AuditLog[]
 }
 
 model ParentLink {
@@ -521,4 +525,21 @@ model Reflection {
   student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
+}
+
+// Админ панельдегі әр өзгеріс: кім, қашан, нені өзгертті
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String // CREATE | UPDATE | DELETE | IMPORT
+  entity    String // src/lib/admin/entities.ts кілті, мысалы "users"
+  recordId  String?
+  summary   String // адамға түсінікті сипаттама
+  changes   Json? // { өріс: [бұрынғы, жаңа] }
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entity, recordId])
 }

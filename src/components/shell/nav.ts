@@ -1,4 +1,5 @@
 import type { Role } from "@prisma/client";
+import { ENTITIES } from "@/lib/admin/entities";
 
 export type NavItem = { href: string; label: string; icon: string };
 export type NavGroup = { title: string; items: NavItem[] };
@@ -26,6 +27,16 @@ const managementGroup: NavGroup = {
     { href: "/academic-director/parents", label: "Ата-ана PIN-кодтары", icon: "key" },
     { href: "/academic-director/curators", label: "Кураторлар", icon: "usercheck" },
     { href: "/academic-director/groups", label: "Топтар: EduPage ↔ Smart Nation", icon: "users" },
+  ],
+};
+
+const adminGroup: NavGroup = {
+  title: "Админ панель",
+  items: [
+    { href: "/admin", label: "Шолу", icon: "database" },
+    ...ENTITIES.map((e) => ({ href: `/admin/${e.key}`, label: e.label, icon: e.icon })),
+    { href: "/admin/import", label: "Excel-ден импорт", icon: "upload" },
+    { href: "/admin/audit", label: "Өзгерістер журналы", icon: "history" },
   ],
 };
 
@@ -67,11 +78,13 @@ export const NAV: Record<Role, NavGroup[]> = {
   TEACHER: [teacherGroup, commonGroup],
   VICE_PRINCIPAL: [teacherGroup, managementGroup, commonGroup],
   DIRECTOR: [
-    { title: "Директор", items: [{ href: "/director", label: "Executive Dashboard", icon: "gauge" }, { href: "/director/users", label: "Пайдаланушылар", icon: "users" }] },
+    { title: "Директор", items: [{ href: "/director", label: "Executive Dashboard", icon: "gauge" }] },
     managementGroup,
+    adminGroup,
     { title: "Оқу процесі", items: teacherGroup.items.filter((i) => i.href !== "/teacher") },
     commonGroup,
   ],
+  ADMIN: [adminGroup, managementGroup, commonGroup],
   PARENT: [
     {
       title: "Балам",

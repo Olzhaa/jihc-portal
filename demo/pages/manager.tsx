@@ -389,7 +389,7 @@ function issue(d: Parameters<Parameters<typeof mutate>[0]>[0], studentId: string
     parent.parentId ??= pid;
     if (parentName) parent.name = parentName;
   } else {
-    parent = { id: uid(), email: null, name: parentName || `${student.name} (ата-анасы)`, role: "PARENT", iin: null, groupId: null, parentId: pid, pin };
+    parent = { id: uid(), email: null, name: parentName || `${student.name} (ата-анасы)`, role: "PARENT", iin: null, groupId: null, parentId: pid, pin, active: true };
     d.users.push(parent);
     d.parentLinks.push({ parentId: parent.id, childId: studentId });
   }

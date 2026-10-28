@@ -10,6 +10,7 @@ import { JihcLogo } from "@/components/jihc-logo";
 const ERRORS: Record<string, string> = {
   domain: "Тек @jihc.edu.kz корпоративтік поштасымен кіруге болады.",
   unknown: "Бұл пошта жүйеде тіркелмеген. Колледж әкімшілігіне хабарласыңыз.",
+  inactive: "Бұл тіркелгі белсенді емес (оқуды бітірген немесе жұмыстан кеткен). Колледж әкімшілігіне хабарласыңыз.",
   CredentialsSignin: "ЖСН / Parent ID немесе PIN қате.",
 };
 
@@ -20,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   const demoUsers = demoLoginEnabled
     ? await prisma.user.findMany({
-        where: { email: { in: ["student@jihc.edu.kz", "teacher@jihc.edu.kz", "zavuch@jihc.edu.kz", "director@jihc.edu.kz", "parent@demo.local"] } },
+        where: { email: { in: ["student@jihc.edu.kz", "teacher@jihc.edu.kz", "zavuch@jihc.edu.kz", "director@jihc.edu.kz", "admin@jihc.edu.kz", "parent@demo.local"] } },
         orderBy: { role: "asc" },
       })
     : [];
