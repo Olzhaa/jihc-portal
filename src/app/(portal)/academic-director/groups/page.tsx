@@ -8,7 +8,7 @@ import { saveSnationCode } from "./actions";
 
 export default async function GroupsPage() {
   await requireUser(MANAGER_ROLES);
-  const groups = await prisma.group.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { students: true } } } });
+  const groups = await prisma.group.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { students: { where: { active: true } } } } } });
   return (
     <div className="space-y-6">
       <PageHeader

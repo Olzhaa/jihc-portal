@@ -24,7 +24,7 @@ export async function loadWorkspace(userId: string, groupId?: string): Promise<W
   if (!group) return null;
 
   const students = await prisma.user.findMany({
-    where: { groupId: group.id, role: "STUDENT" },
+    where: { groupId: group.id, role: "STUDENT", active: true },
     orderBy: { name: "asc" },
     include: { studentProfile: true },
   });

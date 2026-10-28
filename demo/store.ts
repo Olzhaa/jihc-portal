@@ -12,7 +12,7 @@ import type { AttendanceStatus, BookingStatus, CertificateStatus, GradeType, Res
  * demo (GitHub Pages). Data is generated from a fixed seed and saved in localStorage.
  */
 
-export type User = { id: string; email: string | null; name: string; role: Role; iin: string | null; groupId: string | null; parentId: string | null; pin: string | null };
+export type User = { id: string; email: string | null; name: string; role: Role; iin: string | null; groupId: string | null; parentId: string | null; pin: string | null; active: boolean };
 export type Group = { id: string; name: string; snationCode: string | null; curatorId: string | null };
 export type Course = { id: string; code: string | null; title: string; color: string };
 export type Room = { id: string; name: string; type: ResourceType; capacity: number | null; managerId: string | null };
@@ -38,6 +38,8 @@ export type CuratorData = {
   guardians: CuratorRow[]; contacts: CuratorRow[]; tasks: CuratorRow[]; events: CuratorRow[];
   achievements: CuratorRow[]; books: CuratorRow[]; tests: CuratorRow[]; reflections: CuratorRow[];
 };
+/** Админ панельдегі өзгерістер журналы (нақты қосымшадағы AuditLog кестесі). */
+export type AuditRow = { id: string; at: string; userId: string | null; action: string; entity: string; summary: string; changes: [string, string | null, string | null][] | null };
 export type Slip = { student: string; group: string; parentName: string; parentId: string; pin: string };
 
 export type Db = {
@@ -46,9 +48,10 @@ export type Db = {
   attendance: Attendance[]; grades: Grade[]; assignments: Assignment[]; syllabi: Syllabus[]; bookings: Booking[]; lessonRecords: LessonRecord[];
   certificates: Certificate[]; announcements: Announcement[]; rules: Rule[]; parentLinks: ParentLink[];
   curator: CuratorData;
+  audit: AuditRow[];
 };
 
-const VERSION = 5;
+const VERSION = 6;
 const KEY = "jihc-demo-db";
 const SESSION_KEY = "jihc-demo-user";
 
@@ -70,7 +73,7 @@ function generate(): Db {
     return rand() < 0.5 ? `${pick(MALE)} ${sn}${v ? "ев" : "ов"}` : `${pick(FEMALE)} ${sn}${v ? "ева" : "ова"}`;
   };
 
-  const db: Db = { version: VERSION, users: [], groups: [], courses: [], rooms: [], lessons: [], attendance: [], grades: [], assignments: [], syllabi: [], lessonRecords: [], bookings: [], certificates: [], announcements: [], rules: [], parentLinks: [],
+  const db: Db = { version: VERSION, users: [], groups: [], courses: [], rooms: [], lessons: [], attendance: [], grades: [], assignments: [], syllabi: [], lessonRecords: [], bookings: [], certificates: [], announcements: [], rules: [], parentLinks: [], audit: [],
     curator: { profiles: {}, guardians: [], contacts: [], tasks: [], events: [], achievements: [], books: [], tests: [], reflections: [] } };
   const groups: Group[] = ["2F-1", "2D-1", "3F-3", "1P-2"].map((name) => ({ id: uid(), name, snationCode: suggestSnationCode(name), curatorId: null }));
   db.groups = groups;
@@ -91,7 +94,7 @@ function generate(): Db {
   db.courses = [graph, ikt, tarbie, web, dbc, eng, math];
 
   const user = (u: Partial<User> & Pick<User, "name" | "role">): User => {
-    const x: User = { id: uid(), email: null, iin: null, groupId: null, parentId: null, pin: null, ...u };
+    const x: User = { id: uid(), email: null, iin: null, groupId: null, parentId: null, pin: null, active: true, ...u };
     db.users.push(x);
     return x;
   };
@@ -100,6 +103,7 @@ function generate(): Db {
   const t3 = user({ email: "d.kassym@jihc.edu.kz", name: "Даурен Қасым", role: "TEACHER" });
   const zavuch = user({ email: "zavuch@jihc.edu.kz", name: "Гүлмира Әбілова", role: "VICE_PRINCIPAL" });
   user({ email: "director@jihc.edu.kz", name: "Ержан Төлеуов", role: "DIRECTOR" });
+  user({ email: "admin@jihc.edu.kz", name: "Жүйе әкімшісі", role: "ADMIN" });
   hall.managerId = t2.id;
   lab2.managerId = t3.id;
   staffroom.managerId = teacher.id;

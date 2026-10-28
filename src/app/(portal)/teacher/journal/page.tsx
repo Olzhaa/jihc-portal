@@ -39,7 +39,7 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
 
   const date = sp.date ?? lastDateFor(lesson.dayOfWeek);
   const day = parseISODate(date);
-  const students = await prisma.user.findMany({ where: { groupId: lesson.groupId, role: "STUDENT" }, orderBy: { name: "asc" } });
+  const students = await prisma.user.findMany({ where: { groupId: lesson.groupId, role: "STUDENT", active: true }, orderBy: { name: "asc" } });
   const [attendance, grades, certs, history, record, syllabi] = await Promise.all([
     prisma.attendance.findMany({ where: { scheduleId: lesson.id, date: day } }),
     prisma.grade.findMany({ where: { scheduleId: lesson.id, date: day } }),

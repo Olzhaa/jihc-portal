@@ -30,7 +30,7 @@ function workspaceFor(db: Db, userId: string, groupId: string | null): Workspace
   const groups = db.groups.filter((g) => g.curatorId === userId).sort((a, b) => a.name.localeCompare(b.name));
   const group = groups.find((g) => g.id === groupId) ?? groups[0];
   if (!group) return null;
-  const students = db.users.filter((u) => u.role === "STUDENT" && u.groupId === group.id).sort((a, b) => a.name.localeCompare(b.name));
+  const students = db.users.filter((u) => u.role === "STUDENT" && u.active && u.groupId === group.id).sort((a, b) => a.name.localeCompare(b.name));
   const ids = new Set(students.map((s) => s.id));
   const c = db.curator;
   const mine = (xs: CuratorRecord[]) => xs.filter((x) => ids.has(x.studentId as string));
@@ -61,7 +61,7 @@ function curatorApi(userId: string): CuratorApi {
     const db = getDb();
     const group = db.groups.find((g) => g.id === groupId);
     if (!group || group.curatorId !== userId) return null;
-    return new Set(db.users.filter((u) => u.role === "STUDENT" && u.groupId === groupId).map((u) => u.id));
+    return new Set(db.users.filter((u) => u.role === "STUDENT" && u.active && u.groupId === groupId).map((u) => u.id));
   };
   const owns = (kind: RecordKind, row: CuratorRecord | undefined, groupId: string, ids: Set<string>) =>
     !!row && (STUDENT_KINDS.includes(kind) ? ids.has(row.studentId as string) : row.groupId === groupId);
@@ -128,7 +128,7 @@ export function Curators() {
   return (
     <CuratorAssign
       groups={[...db.groups].sort((a, b) => a.name.localeCompare(b.name)).map((g) => ({
-        id: g.id, name: g.name, curatorId: g.curatorId, students: db.users.filter((u) => u.role === "STUDENT" && u.groupId === g.id).length,
+        id: g.id, name: g.name, curatorId: g.curatorId, students: db.users.filter((u) => u.role === "STUDENT" && u.active && u.groupId === g.id).length,
       }))}
       teachers={db.users.filter((u) => STAFF_ROLES.includes(u.role)).sort((a, b) => a.name.localeCompare(b.name))}
       onAssign={async (groupId, teacherId) => {

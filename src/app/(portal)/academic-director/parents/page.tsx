@@ -13,7 +13,7 @@ export default async function ParentPins({ searchParams }: { searchParams: Promi
   const current = groups.find((g) => g.id === group) ?? groups[0];
   const students = current
     ? await prisma.user.findMany({
-        where: { groupId: current.id, role: "STUDENT" },
+        where: { groupId: current.id, role: "STUDENT", active: true },
         include: { parents: { include: { parent: true } } },
         orderBy: { name: "asc" },
       })

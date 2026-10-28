@@ -1,0 +1,10 @@
+# Порталдың алдындағы HTTPS: Caddy Let's Encrypt сертификатын өзі алады және жаңартады.
+# Талап: DOMAIN (әдепкі my.jihc.edu.kz) DNS жазбасы осы серверге бағытталған, 80 және 443 порттары ашық.
+{$DOMAIN:my.jihc.edu.kz} {
+	encode gzip
+	# Справкалар ≤ 5 МБ; қор қалдырып шектейміз
+	request_body {
+		max_size 10MB
+	}
+	reverse_proxy app:3000
+}

@@ -7,7 +7,7 @@ import { assignCurator } from "./actions";
 export default async function CuratorsPage() {
   await requireUser(MANAGER_ROLES);
   const [groups, teachers] = await Promise.all([
-    prisma.group.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { students: { where: { role: "STUDENT" } } } } } }),
+    prisma.group.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { students: { where: { role: "STUDENT", active: true } } } } } }),
     prisma.user.findMany({ where: { role: { in: STAFF_ROLES } }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
   return (

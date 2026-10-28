@@ -24,7 +24,7 @@ const fullName = () => {
 
 async function main() {
   await prisma.$transaction([
-    prisma.contactLog.deleteMany(), prisma.guardian.deleteMany(), prisma.studentProfile.deleteMany(), prisma.achievement.deleteMany(),
+    prisma.auditLog.deleteMany(), prisma.contactLog.deleteMany(), prisma.guardian.deleteMany(), prisma.studentProfile.deleteMany(), prisma.achievement.deleteMany(),
     prisma.bookRead.deleteMany(), prisma.testResult.deleteMany(), prisma.reflection.deleteMany(), prisma.curatorTask.deleteMany(), prisma.classEvent.deleteMany(),
     prisma.attendance.deleteMany(), prisma.grade.deleteMany(), prisma.assignment.deleteMany(), prisma.medicalCertificate.deleteMany(),
     prisma.booking.deleteMany(), prisma.syllabus.deleteMany(), prisma.lessonRecord.deleteMany(), prisma.schedule.deleteMany(),
@@ -52,13 +52,14 @@ async function main() {
   const eng = await c("ЖББП 1", "Кәсіби ағылшын тілі", "#fde68a");
   const math = await c("ЖББП 3", "Математика", "#fdba74");
 
-  const staff = async (email: string, name: string, role: "TEACHER" | "VICE_PRINCIPAL" | "DIRECTOR") =>
+  const staff = async (email: string, name: string, role: "TEACHER" | "VICE_PRINCIPAL" | "DIRECTOR" | "ADMIN") =>
     prisma.user.create({ data: { email, name, role } });
   const teacher = await staff("teacher@jihc.edu.kz", "Ғалым Сапаров", "TEACHER");
   const t2 = await staff("a.nurgali@jihc.edu.kz", "Ажар Нұрғали", "TEACHER");
   const t3 = await staff("d.kassym@jihc.edu.kz", "Даурен Қасым", "TEACHER");
   const zavuch = await staff("zavuch@jihc.edu.kz", "Гүлмира Әбілова", "VICE_PRINCIPAL");
   await staff("director@jihc.edu.kz", "Ержан Төлеуов", "DIRECTOR");
+  await staff("admin@jihc.edu.kz", "Жүйе әкімшісі", "ADMIN");
 
   // Responsible teachers approve requests for special rooms.
   const hallRoom = rooms.find((r) => r.type === "HALL")!;

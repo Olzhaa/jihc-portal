@@ -28,7 +28,7 @@ export async function setGrade(scope: Scope, input: { studentId: string; column:
   if (!user) return { error: "Бұл бағалар кітабы сізге бекітілмеген" };
   const value = input.value === null ? null : parseGradeInput(String(input.value));
   if (value !== null && typeof value === "object") return { error: value.error };
-  const student = await prisma.user.findFirst({ where: { id: input.studentId, groupId: scope.groupId, role: "STUDENT" } });
+  const student = await prisma.user.findFirst({ where: { id: input.studentId, groupId: scope.groupId, role: "STUDENT", active: true } });
   if (!student) return { error: "Студент бұл топта жоқ" };
 
   if (input.gradeId) {

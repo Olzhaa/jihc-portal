@@ -25,6 +25,7 @@ const providers: NextAuthOptions["providers"] = [
       const candidates = await prisma.user.findMany({
         where: {
           role: "PARENT",
+          active: true,
           OR: [{ parentId: identifier }, { children: { some: { child: { iin: identifier } } } }],
         },
       });
@@ -58,7 +59,7 @@ if (demoLoginEnabled) {
       async authorize(credentials) {
         if (!credentials?.email) return null;
         const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        return user ? { id: user.id, name: user.name, email: user.email, role: user.role } : null;
+        return user?.active ? { id: user.id, name: user.name, email: user.email, role: user.role } : null;
       },
     }),
   );
@@ -76,7 +77,8 @@ export const authOptions: NextAuthOptions = {
       if (!email || !verified || !email.endsWith(`@${DOMAIN}`)) return "/login?error=domain";
       // Accounts are created by the administration (import), not on first login.
       const exists = await prisma.user.findUnique({ where: { email } });
-      return exists ? true : "/login?error=unknown";
+      if (!exists) return "/login?error=unknown";
+      return exists.active ? true : "/login?error=inactive";
     },
     async jwt({ token, user, account }) {
       if (account?.provider === "google" && token.email) {

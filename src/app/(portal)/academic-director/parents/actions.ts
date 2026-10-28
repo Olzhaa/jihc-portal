@@ -57,7 +57,7 @@ export async function issuePin(studentId: string, form: FormData): Promise<Slip[
 /** Issues PINs for every student in the group who doesn't have a parent account yet. */
 export async function issueForGroup(groupId: string): Promise<Slip[]> {
   await requireUser(MANAGER_ROLES);
-  const students = await prisma.user.findMany({ where: { groupId, role: "STUDENT", parents: { none: {} } }, orderBy: { name: "asc" } });
+  const students = await prisma.user.findMany({ where: { groupId, role: "STUDENT", active: true, parents: { none: {} } }, orderBy: { name: "asc" } });
   const slips: Slip[] = [];
   for (const s of students) slips.push(await issue(s.id));
   revalidatePath("/academic-director/parents");

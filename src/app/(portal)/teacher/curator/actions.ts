@@ -24,7 +24,7 @@ const delegate = (kind: RecordKind) => (prisma as unknown as Record<string, Dele
 
 async function curatorOf(groupId: string) {
   const user = await requireUser(STAFF_ROLES);
-  const group = await prisma.group.findUnique({ where: { id: groupId }, include: { students: { where: { role: "STUDENT" }, select: { id: true } } } });
+  const group = await prisma.group.findUnique({ where: { id: groupId }, include: { students: { where: { role: "STUDENT", active: true }, select: { id: true } } } });
   if (!group || group.curatorId !== user.id) return { error: "Сіз бұл топтың кураторы емессіз" } as const;
   return { user, group, studentIds: new Set(group.students.map((s) => s.id)) } as const;
 }

@@ -30,7 +30,7 @@ export default async function GradebookPage({ searchParams }: { searchParams: Pr
   }
 
   const [students, grades, attendance, assignments] = await Promise.all([
-    prisma.user.findMany({ where: { groupId: current.groupId, role: "STUDENT" }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.user.findMany({ where: { groupId: current.groupId, role: "STUDENT", active: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.grade.findMany({ where: { courseId: current.courseId, student: { groupId: current.groupId } } }),
     prisma.attendance.findMany({ where: { courseId: current.courseId, student: { groupId: current.groupId } }, include: { schedule: true } }),
     prisma.assignment.findMany({ where: { courseId: current.courseId, groupId: current.groupId } }),

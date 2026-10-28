@@ -8,7 +8,7 @@ import { login, resetDemo, useDb } from "../store";
 import { navigate } from "../router";
 import { JihcLogo } from "@/components/jihc-logo";
 
-const DEMO_EMAILS = ["student@jihc.edu.kz", "teacher@jihc.edu.kz", "zavuch@jihc.edu.kz", "director@jihc.edu.kz", "parent@demo.local"];
+const DEMO_EMAILS = ["student@jihc.edu.kz", "teacher@jihc.edu.kz", "zavuch@jihc.edu.kz", "director@jihc.edu.kz", "admin@jihc.edu.kz", "parent@demo.local"];
 
 export function LoginPage() {
   const db = useDb();
@@ -63,7 +63,7 @@ export function LoginPage() {
                 const pin = String(fd.get("pin")).trim();
                 const child = db.users.find((u) => u.iin === id);
                 const parents = db.users.filter(
-                  (u) => u.role === "PARENT" && (u.parentId === id || (child && db.parentLinks.some((l) => l.parentId === u.id && l.childId === child.id))),
+                  (u) => u.role === "PARENT" && u.active && (u.parentId === id || (child && db.parentLinks.some((l) => l.parentId === u.id && l.childId === child.id))),
                 );
                 const p = parents.find((u) => u.pin === pin);
                 if (p) enter(p.id);

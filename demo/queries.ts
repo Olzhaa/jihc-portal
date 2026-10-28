@@ -25,9 +25,9 @@ function toTimetable(db: Db, rows: Lesson[], sub: "teacher" | "group"): Timetabl
 export const lessonsForGroup = (db: Db, groupId: string) => toTimetable(db, db.lessons.filter((l) => l.groupId === groupId), "teacher");
 export const lessonsForTeacher = (db: Db, teacherId: string) => toTimetable(db, db.lessons.filter((l) => l.teacherId === teacherId), "group");
 
-export function findConflicts(db: Db, slot: Omit<Lesson, "id">) {
+export function findConflicts(db: Db, slot: Omit<Lesson, "id"> & { id?: string }) {
   return db.lessons
-    .filter((o) => o.dayOfWeek === slot.dayOfWeek && o.startPeriod <= slot.endPeriod && o.endPeriod >= slot.startPeriod && (o.groupId === slot.groupId || o.teacherId === slot.teacherId || o.roomId === slot.roomId))
+    .filter((o) => o.id !== slot.id && o.dayOfWeek === slot.dayOfWeek && o.startPeriod <= slot.endPeriod && o.endPeriod >= slot.startPeriod && (o.groupId === slot.groupId || o.teacherId === slot.teacherId || o.roomId === slot.roomId))
     .map((o) => {
       const what = [
         o.groupId === slot.groupId && `${byId(db.groups, o.groupId)?.name} тобы бос емес`,
@@ -105,7 +105,7 @@ export function studentGradebook(db: Db, studentId: string) {
 }
 
 export function collegeStats(db: Db) {
-  const students = db.users.filter((u) => u.role === "STUDENT");
+  const students = db.users.filter((u) => u.role === "STUDENT" && u.active);
   const studentGroup = new Map(students.map((s) => [s.id, s.groupId]));
   const avgByStudent = new Map<string, number>();
   for (const s of students) {

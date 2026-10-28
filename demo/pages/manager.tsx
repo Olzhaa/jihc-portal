@@ -389,7 +389,7 @@ function issue(d: Parameters<Parameters<typeof mutate>[0]>[0], studentId: string
     parent.parentId ??= pid;
     if (parentName) parent.name = parentName;
   } else {
-    parent = { id: uid(), email: null, name: parentName || `${student.name} (ата-анасы)`, role: "PARENT", iin: null, groupId: null, parentId: pid, pin };
+    parent = { id: uid(), email: null, name: parentName || `${student.name} (ата-анасы)`, role: "PARENT", iin: null, groupId: null, parentId: pid, pin, active: true };
     d.users.push(parent);
     d.parentLinks.push({ parentId: parent.id, childId: studentId });
   }
@@ -400,7 +400,7 @@ export function ParentPins() {
   const db = useDb();
   const group = useGroup();
   const [slips, setSlips] = useState<Slip[]>([]);
-  const students = db.users.filter((u) => u.role === "STUDENT" && u.groupId === group.id).sort((a, b) => a.name.localeCompare(b.name));
+  const students = db.users.filter((u) => u.role === "STUDENT" && u.active && u.groupId === group.id).sort((a, b) => a.name.localeCompare(b.name));
   const parentOf = (id: string) => {
     const l = db.parentLinks.find((x) => x.childId === id);
     return l ? byId(db.users, l.parentId) : undefined;
@@ -487,7 +487,7 @@ export function Groups() {
       <Card>
         <CardContent className="pt-6">
           <GroupMapping
-            groups={groups.map((g) => ({ id: g.id, name: g.name, snationCode: g.snationCode, students: db.users.filter((u) => u.role === "STUDENT" && u.groupId === g.id).length }))}
+            groups={groups.map((g) => ({ id: g.id, name: g.name, snationCode: g.snationCode, students: db.users.filter((u) => u.role === "STUDENT" && u.active && u.groupId === g.id).length }))}
             onSave={(id, code) => {
               const checked = checkSnationCode(code);
               if (checked !== null && typeof checked === "object") return checked;
