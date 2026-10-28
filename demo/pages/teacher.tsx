@@ -204,7 +204,7 @@ function JournalEditor({ lessonId, date }: { lessonId: string; date: string }) {
   const db = useDb();
   const lesson = byId(db.lessons, lessonId)!;
   const day = parseISODate(date);
-  const students = db.users.filter((u) => u.role === "STUDENT" && u.groupId === lesson.groupId).sort((a, b) => a.name.localeCompare(b.name));
+  const students = db.users.filter((u) => u.role === "STUDENT" && u.active && u.groupId === lesson.groupId).sort((a, b) => a.name.localeCompare(b.name));
   const excused = db.certificates.filter((c) => c.status === "APPROVED" && c.startDate <= day && c.endDate >= day).map((c) => c.studentId);
   const onDay = <T extends { scheduleId: string | null; date: Date }>(rows: T[]) => rows.filter((x) => x.scheduleId === lessonId && +x.date === +day);
   const record = onDay(db.lessonRecords)[0];
@@ -259,7 +259,7 @@ export function Gradebook() {
   if (!current) return <PageHeader title="Бағалар кітабы" description="Сізге бекітілген сабақ жоқ." />;
   const group = byId(db.groups, current.groupId)!;
   const course = byId(db.courses, current.courseId)!;
-  const students = db.users.filter((u) => u.role === "STUDENT" && u.groupId === group.id).sort((a, b) => a.name.localeCompare(b.name));
+  const students = db.users.filter((u) => u.role === "STUDENT" && u.active && u.groupId === group.id).sort((a, b) => a.name.localeCompare(b.name));
   const ids = new Set(students.map((s) => s.id));
   const title = `${group.name} ${course.title}`;
 
@@ -338,7 +338,7 @@ export function Gradebook() {
 function JournalHistory({ lessonId }: { lessonId: string }) {
   const db = useDb();
   const lesson = byId(db.lessons, lessonId)!;
-  const students = db.users.filter((u) => u.role === "STUDENT" && u.groupId === lesson.groupId).sort((a, b) => a.name.localeCompare(b.name));
+  const students = db.users.filter((u) => u.role === "STUDENT" && u.active && u.groupId === lesson.groupId).sort((a, b) => a.name.localeCompare(b.name));
   const ids = new Set(students.map((s) => s.id));
   const history = db.attendance.filter((a) => a.courseId === lesson.courseId && ids.has(a.studentId));
   const grades = db.grades.filter((g) => g.courseId === lesson.courseId && ids.has(g.studentId));

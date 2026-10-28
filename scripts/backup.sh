@@ -10,14 +10,20 @@ mkdir -p /backups/db /backups/uploads
 
 run() {
   stamp=$(date +%F_%H%M)
-  pg_dump -Fc -f "/backups/db/jihc-$stamp.dump.part" && mv "/backups/db/jihc-$stamp.dump.part" "/backups/db/jihc-$stamp.dump"
+  pg_dump -Fc -f "/backups/db/jihc-$stamp.dump.part"
+  # Бүтіндігін тексеру: pg_restore файлдың мазмұнын оқи алмаса, көшірме сақталмайды.
+  pg_restore --list "/backups/db/jihc-$stamp.dump.part" > /dev/null
+  mv "/backups/db/jihc-$stamp.dump.part" "/backups/db/jihc-$stamp.dump"
   if [ -d /uploads ]; then tar -czf "/backups/uploads/uploads-$(date +%F).tar.gz" -C /uploads .; fi
   find /backups -type f -mtime "+$KEEP_DAYS" -delete
+  find /backups/db -name '*.part' -delete
+  # Басқа компьютер (scripts/offsite-pull.sh) осы файл арқылы соңғы сәтті көшірмені біледі.
+  date '+%F %T' > /backups/LAST_OK
   echo "$(date '+%F %T') backup ok: jihc-$stamp.dump ($(du -h "/backups/db/jihc-$stamp.dump" | cut -f1))"
 }
 
 # Іске қосылғанда бір рет (көшірменің жұмыс істейтінін бірден көру үшін), сосын күн сайын.
-run
+run || echo "$(date '+%F %T') backup FAILED" >&2
 while true; do
   next=$(date -d "tomorrow $BACKUP_AT" +%s)
   today=$(date -d "today $BACKUP_AT" +%s)

@@ -28,10 +28,28 @@ services:
     environment:
       DATABASE_URL: postgresql://jihc:${POSTGRES_PASSWORD:-change-me}@db:5432/jihc
       UPLOAD_DIR: /data/uploads
+    # Сыртқа тек Caddy (HTTPS) арқылы; 3000 порты тек сервердің өзінде ашық (тексеру үшін)
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - uploads:/data/uploads
+
+  # HTTPS: my.jihc.edu.kz сертификатын өзі алады (Caddyfile). DOMAIN .env ішінде.
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:-my.jihc.edu.kz}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
   # Күн сайын 02:00-де pg_dump + справкалар архиві ./backups қалтасына (scripts/backup.sh).
   # ./backups қалтасын серверден тыс жерге де көшіріп тұрыңыз (docs/DATABASE.md).
@@ -58,3 +76,5 @@ services:
 volumes:
   pgdata:
   uploads:
+  caddy_data:
+  caddy_config:

@@ -12,7 +12,7 @@ export async function collegeStats() {
       FROM "Attendance" a JOIN "User" u ON u.id = a."studentId"
       GROUP BY u."groupId"`,
     prisma.grade.groupBy({ by: ["studentId"], _avg: { value: true } }),
-    prisma.user.findMany({ where: { role: "STUDENT" }, include: { group: true } }),
+    prisma.user.findMany({ where: { role: "STUDENT", active: true }, include: { group: true } }),
     prisma.attendance.groupBy({ by: ["studentId"], where: { status: "ABSENT" }, _count: { _all: true } }),
   ]);
 

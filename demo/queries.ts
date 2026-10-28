@@ -105,7 +105,7 @@ export function studentGradebook(db: Db, studentId: string) {
 }
 
 export function collegeStats(db: Db) {
-  const students = db.users.filter((u) => u.role === "STUDENT");
+  const students = db.users.filter((u) => u.role === "STUDENT" && u.active);
   const studentGroup = new Map(students.map((s) => [s.id, s.groupId]));
   const avgByStudent = new Map<string, number>();
   for (const s of students) {

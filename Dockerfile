@@ -1,6 +1,9 @@
 # JIHC Portal — production image
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
+# prisma.config.ts DATABASE_URL талап етеді; құрастыру кезінде дерекқорға қосылмаймыз, сондықтан жалған мән жеткілікті.
+# Нақтысын іске қосқанда docker-compose.yml береді.
+ARG DATABASE_URL=postgresql://build:build@localhost:5432/build
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 COPY prisma ./prisma

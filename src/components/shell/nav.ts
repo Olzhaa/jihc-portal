@@ -78,9 +78,8 @@ export const NAV: Record<Role, NavGroup[]> = {
   TEACHER: [teacherGroup, commonGroup],
   VICE_PRINCIPAL: [teacherGroup, managementGroup, commonGroup],
   DIRECTOR: [
-    { title: "Директор", items: [{ href: "/director", label: "Executive Dashboard", icon: "gauge" }] },
+    { title: "Директор", items: [{ href: "/director", label: "Executive Dashboard", icon: "gauge" }, { href: "/director/users", label: "Пайдаланушылар", icon: "users" }] },
     managementGroup,
-    adminGroup,
     { title: "Оқу процесі", items: teacherGroup.items.filter((i) => i.href !== "/teacher") },
     commonGroup,
   ],
