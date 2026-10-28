@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { contacts, staff, type StaffGroup } from "../content";
+import { staff, type StaffGroup } from "../content";
 import { Icon } from "../icons";
+import { href } from "../router";
 import { Chips, container, DarkBanner, PageHero, PersonCard, SearchBox } from "../ui";
 
 const FILTERS = ["Барлығы", ...staff.map((g) => g.group)] as ("Барлығы" | StaffGroup)[];
@@ -43,7 +44,7 @@ export function StaffPage() {
         title="Біздің командаға қосылыңыз"
         text="Ағылшын тілінде сабақ беретін, дамуға ұмтылатын оқытушыларды іздейміз."
         actions={
-          <a href={`mailto:${contacts.email}`} className="inline-flex items-center gap-2.5 rounded-xl bg-brand-strong px-[26px] py-4 font-semibold text-white">
+          <a href={href("/", "vacancies")} className="inline-flex items-center gap-2.5 rounded-xl bg-brand-strong px-[26px] py-4 font-semibold text-white">
             Бос орындар <Icon name="arrow" size={18} />
           </a>
         }

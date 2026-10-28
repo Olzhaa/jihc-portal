@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { admissionDocuments, admissionSteps, featuredPrograms, homeNews, stats, testimonial, whyJihc } from "../content";
+import { admissionDocuments, admissionNotes, admissionSteps, contacts, vacancies, featuredPrograms, homeNews, stats, testimonial, whyJihc } from "../content";
 import { Icon, Rings } from "../icons";
 import { photos } from "../photos";
 import { href } from "../router";
@@ -161,7 +160,6 @@ function WhyJihc() {
 }
 
 function Admission() {
-  const [docsOpen, setDocsOpen] = useState(false);
   return (
     <section id="admission" className="bg-bg">
       <div className={`${container} flex flex-col items-center gap-14 py-16 lg:py-[112px]`}>
@@ -177,23 +175,95 @@ function Admission() {
         </div>
         <div className="flex flex-wrap justify-center gap-3.5">
           <ButtonPrimary href={href("/", "lead")}>Құжат тапсыру</ButtonPrimary>
-          <button
-            onClick={() => setDocsOpen(!docsOpen)}
-            className="inline-flex items-center justify-center gap-2.5 rounded-xl border-[1.5px] border-brand-soft bg-card px-[26px] py-4 text-base font-semibold text-brand-strong hover:border-brand-light"
-          >
+          <ButtonOutline href={href("/", "documents")} arrow={false}>
             Қажетті құжаттар тізімі
-          </button>
+          </ButtonOutline>
         </div>
-        {docsOpen && (
-          <ul className="w-full max-w-[640px] space-y-2.5 rounded-[20px] border border-border bg-white p-6 text-[15px] text-fg">
-            {admissionDocuments.map((d) => (
-              <li key={d} className="flex gap-3">
-                <Icon name="file" size={20} className="shrink-0 text-brand-strong" />
-                {d}
+      </div>
+    </section>
+  );
+}
+
+function Documents() {
+  return (
+    <section id="documents" className="bg-white">
+      <div className={`${container} flex flex-col gap-10 py-16 lg:flex-row lg:gap-16 lg:py-[112px]`}>
+        <div className="flex flex-col gap-8 lg:w-[440px] lg:shrink-0">
+          <SectionTitle eyebrow="ТАЛАПКЕРГЕ" title="Қажетті құжаттар" lead="Құжаттарды қабылдау комиссиясына өзіңіз немесе ата-анаңызбен бірге әкелесіз." />
+          <div className="flex flex-col gap-3">
+            {admissionNotes.map((n) => (
+              <div key={n.title} className="flex items-center gap-4 rounded-2xl bg-bg px-5 py-4">
+                <IconBox name={n.icon} />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[13px] font-medium text-muted-fg">{n.title}</span>
+                  <span className="text-[15px] font-semibold text-fg">{n.text}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col gap-6 rounded-[28px] border border-border bg-bg p-6 sm:p-10">
+          <ol className="flex flex-col gap-3">
+            {admissionDocuments.map((d, i) => (
+              <li key={d} className="flex items-center gap-4 rounded-2xl border border-border bg-white px-5 py-4">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand text-[15px] font-extrabold text-white">{i + 1}</span>
+                <span className="text-[16px] font-medium leading-[1.45] text-fg">{d}</span>
+                <Icon name="check" size={20} className="ml-auto shrink-0 text-brand" />
               </li>
             ))}
-          </ul>
-        )}
+          </ol>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-fg">Түпнұсқалармен бірге көшірмелерін ала келіңіз.</p>
+            <ButtonPrimary href={href("/", "lead")} className="self-start sm:self-auto">
+              Өтінім қалдыру
+            </ButtonPrimary>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Vacancies() {
+  return (
+    <section id="vacancies" className="bg-bg">
+      <div className={`${container} flex flex-col gap-12 py-16 lg:py-[112px]`}>
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <SectionTitle eyebrow="МАНСАП" title="Бос вакансиялар" lead="Ағылшын тілінде сабақ беретін, дамуға ұмтылатын мамандарды командамызға шақырамыз." />
+          <ButtonOutline href={href("/staff")} className="self-start sm:self-auto">
+            Біздің команда
+          </ButtonOutline>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {vacancies.map((v) => (
+            <article key={v.title} className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-7 shadow-[0_8px_24px_rgba(10,20,51,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <IconBox name="briefcase" />
+                <Tag>{v.department}</Tag>
+              </div>
+              <div className="flex flex-col gap-2">
+                <h3 className="text-xl font-bold leading-[1.3] text-fg">{v.title}</h3>
+                <span className="flex items-center gap-2 text-sm font-medium text-muted-fg">
+                  <Icon name="clock" size={16} className="text-brand" /> {v.type}
+                </span>
+              </div>
+              <ul className="flex flex-1 flex-col gap-2.5">
+                {v.requirements.map((r) => (
+                  <li key={r} className="flex gap-2.5 text-[15px] leading-[1.5] text-muted-fg">
+                    <Icon name="check" size={18} className="mt-0.5 shrink-0 text-brand-strong" />
+                    {r}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={`mailto:${contacts.email}?subject=${encodeURIComponent(`Вакансия: ${v.title}`)}`}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-strong px-5 py-3.5 text-[15px] font-semibold text-white hover:bg-[#1d4ed8]"
+              >
+                Түйіндеме жіберу <Icon name="arrow" size={16} />
+              </a>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -227,7 +297,9 @@ export function HomePage() {
       <Specialties />
       <WhyJihc />
       <Admission />
+      <Documents />
       <News />
+      <Vacancies />
       <div id="lead">
         <Cta />
       </div>

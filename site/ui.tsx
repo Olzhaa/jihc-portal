@@ -391,6 +391,7 @@ export function Footer() {
         ["Біз туралы", href("/about")],
         ["Әкімшілік", href("/about", "leadership")],
         ["Оқытушылар", href("/staff")],
+        ["Бос вакансиялар", href("/", "vacancies")],
         ["Портал", PORTAL_URL],
       ],
     },
@@ -399,6 +400,7 @@ export function Footer() {
       links: [
         ["Мамандықтар", href("/programs")],
         ["Қабылдау ережесі", href("/", "admission")],
+        ["Қажетті құжаттар", href("/", "documents")],
         ["Грант және шәкіртақы", href("/programs", "faq")],
         ["Жиі қойылатын сұрақтар", href("/programs", "faq")],
       ],
