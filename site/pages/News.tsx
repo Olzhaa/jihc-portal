@@ -9,10 +9,7 @@ const PAGE_SIZE = 9;
 function Featured() {
   return (
     <article className="flex flex-col overflow-hidden rounded-[28px] border border-border bg-card shadow-[0_16px_40px_rgba(10,20,51,0.08)] lg:flex-row lg:items-center">
-      <div className="flex h-[260px] flex-col items-center justify-center gap-2 bg-brand-tint sm:h-[420px] lg:w-[640px] lg:shrink-0">
-        <Icon name="image" size={44} strokeWidth={2.2} className="text-brand-light" />
-        <p className="text-sm font-medium text-brand-strong">Басты жаңалық фотосы</p>
-      </div>
+      <img src={featuredNews.photo} alt="" className="h-[260px] w-full object-cover sm:h-[420px] lg:w-[640px] lg:shrink-0" />
       <div className="flex flex-col gap-[18px] p-8 lg:px-14 lg:py-12">
         <div className="flex items-center gap-2.5">
           <span className="rounded-full bg-brand-strong px-3 py-1.5 text-xs font-semibold tracking-[0.72px] text-white">{featuredNews.label}</span>

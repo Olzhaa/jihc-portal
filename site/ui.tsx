@@ -80,10 +80,14 @@ export function BenefitCard({ icon, title, text }: { icon: IconName; title: stri
 export function NewsCard({ item }: { item: NewsItem }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-[20px] border border-border bg-card shadow-[0_8px_24px_rgba(15,23,41,0.06)]">
-      <div className="flex h-[216px] flex-col items-center justify-center gap-2 bg-brand-tint text-brand-light">
-        <Icon name="image" size={32} strokeWidth={2.2} />
-        <p className="text-[13px] font-medium text-brand-strong">Фото</p>
-      </div>
+      {item.photo ? (
+        <img src={item.photo} alt="" loading="lazy" className="h-[216px] w-full object-cover" />
+      ) : (
+        <div className="flex h-[216px] flex-col items-center justify-center gap-2 bg-brand-tint text-brand-light">
+          <Icon name="image" size={32} strokeWidth={2.2} />
+          <p className="text-[13px] font-medium text-brand-strong">Фото</p>
+        </div>
+      )}
       <div className="flex flex-col gap-3 p-6">
         <div className="flex items-center gap-2 text-muted-fg">
           <span className="text-xs font-semibold tracking-[0.72px] text-brand-strong">{item.label}</span>
@@ -109,7 +113,8 @@ export function PersonCard({ name, role }: { name: string; role: string }) {
   );
 }
 
-export function PhotoPlaceholder({ label, className = "" }: { label: string; className?: string }) {
+export function PhotoPlaceholder({ label, src, className = "" }: { label: string; src?: string; className?: string }) {
+  if (src) return <img src={src} alt={label} loading="lazy" className={`object-cover ${className}`} />;
   return (
     <div className={`flex flex-col items-center justify-center gap-2 bg-brand-tint ${className}`}>
       <Icon name="image" size={36} strokeWidth={2.4} className="text-brand-light" />

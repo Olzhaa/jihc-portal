@@ -1,4 +1,5 @@
 import { about, staff } from "../content";
+import { photos } from "../photos";
 import { href } from "../router";
 import { BenefitCard, ButtonOutline, container, Cta, Eyebrow, PageHero, PersonCard, PhotoPlaceholder, SectionTitle } from "../ui";
 
@@ -22,9 +23,10 @@ function Intro() {
           </div>
         </div>
         <div className="relative mx-auto h-[420px] w-full max-w-[568px] sm:h-[520px]">
-          <PhotoPlaceholder label="Кампус" className="absolute left-0 top-0 h-[360px] w-[70%] rounded-3xl sm:h-[440px] sm:w-[360px]" />
+          <PhotoPlaceholder label="Кампус" src={photos.lab} className="absolute left-0 top-0 h-[360px] w-[70%] rounded-3xl sm:h-[440px] sm:w-[360px]" />
           <PhotoPlaceholder
             label="Студенттер"
+            src={photos.stage}
             className="absolute bottom-0 right-0 h-[240px] w-[50%] rounded-3xl border-8 border-white shadow-[0_16px_40px_rgba(10,20,51,0.15)] sm:h-[300px] sm:w-[260px]"
           />
           <div className="absolute right-0 top-10 flex flex-col gap-0.5 rounded-[18px] bg-brand-strong px-[22px] py-[18px] text-white shadow-[0_12px_30px_rgba(10,20,51,0.25)] sm:left-[330px] sm:right-auto">

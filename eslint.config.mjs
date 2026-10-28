@@ -22,6 +22,8 @@ const eslintConfig = [
       "site-dist/**",
     ],
   },
+  // Колледж сайты Vite-пен жиналады, next/image ол жерде жоқ.
+  { files: ["site/**"], rules: { "@next/next/no-img-element": "off" } },
 ];
 
 export default eslintConfig;

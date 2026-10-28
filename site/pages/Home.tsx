@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { admissionDocuments, admissionSteps, featuredPrograms, homeNews, stats, testimonial, whyJihc } from "../content";
 import { Icon, Rings } from "../icons";
+import { photos } from "../photos";
 import { href } from "../router";
 import { BenefitCard, ButtonOutline, ButtonPrimary, container, Cta, IconBox, NewsCard, SectionTitle, Tag } from "../ui";
 
@@ -52,13 +53,11 @@ function Hero() {
           </div>
         </div>
         <div className="relative mx-auto h-[420px] w-full max-w-[524px] sm:h-[540px]">
-          <div
-            className="absolute inset-y-0 right-0 flex w-[84%] flex-col items-center justify-center gap-2.5 rounded-[32px] sm:bottom-5"
-            style={{ backgroundImage: "linear-gradient(130deg, #3b82f6 0%, #132b5c 71.4%)" }}
-          >
-            <Icon name="image" size={40} strokeWidth={2} className="text-brand-soft" />
-            <p className="text-sm font-medium text-white">Колледж фотосы</p>
-          </div>
+          <img
+            src={photos.stage}
+            alt="Колледж студенттері сахнада"
+            className="absolute inset-y-0 right-0 h-full w-[84%] rounded-[32px] object-cover sm:bottom-5 sm:h-auto"
+          />
           <Rings sizes={[120]} color="#93C5FD" dash={{ width: 10, pattern: "3 7" }} className="absolute -right-9 -top-[30px] hidden sm:block" />
           <FloatCard icon="briefcase" value="95%" label="түлектер жұмысқа орналасады" className="bottom-[60px] left-0 sm:top-[380px] sm:bottom-auto" />
           <FloatCard icon="cap" value="15+" label="білім беру бағдарламасы" className="right-0 top-[60px] sm:-right-[66px] sm:left-auto" />
@@ -143,7 +142,7 @@ function WhyJihc() {
             </p>
           </div>
           <div className="relative h-[280px] overflow-hidden rounded-3xl bg-brand-tint">
-            <Icon name="image" size={36} strokeWidth={2.4} className="absolute right-11 top-[30px] text-brand-light" />
+            <img src={photos.football} alt="" loading="lazy" className="absolute inset-0 size-full object-cover object-[center_70%]" />
             <div className="absolute left-6 top-[120px] flex w-[300px] max-w-[calc(100%-48px)] flex-col gap-2.5 rounded-[18px] bg-white p-6 shadow-[0_10px_30px_rgba(10,20,51,0.12)]">
               <span className="text-[32px] font-extrabold leading-[0.6] text-brand">«</span>
               <p className="text-[15px] font-medium leading-normal text-fg">{testimonial.quote}</p>
