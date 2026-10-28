@@ -1,6 +1,10 @@
 import { useSyncExternalStore } from "react";
 import { groupCourse, isoOf } from "@/lib/curator";
 import { demoCuratorData } from "@/lib/curator-demo";
+import type { SyllabusTopic } from "@/lib/syllabus";
+import { GRAPH_PLAN, IKT_PLAN } from "@/lib/demo-plans";
+import { totals } from "@/lib/syllabus";
+import { suggestSnationCode } from "@/lib/assessment";
 import type { AttendanceStatus, BookingStatus, CertificateStatus, GradeType, ResourceType, Role, SyllabusStatus } from "@prisma/client";
 
 /**
@@ -9,13 +13,14 @@ import type { AttendanceStatus, BookingStatus, CertificateStatus, GradeType, Res
  */
 
 export type User = { id: string; email: string | null; name: string; role: Role; iin: string | null; groupId: string | null; parentId: string | null; pin: string | null };
-export type Group = { id: string; name: string; curatorId: string | null };
+export type Group = { id: string; name: string; snationCode: string | null; curatorId: string | null };
 export type Course = { id: string; code: string | null; title: string; color: string };
 export type Room = { id: string; name: string; type: ResourceType; capacity: number | null; managerId: string | null };
 export type Lesson = { id: string; groupId: string; courseId: string; teacherId: string; roomId: string; dayOfWeek: number; startPeriod: number; endPeriod: number };
 export type Attendance = { id: string; studentId: string; courseId: string; scheduleId: string; markedById: string; date: Date; status: AttendanceStatus };
-export type Grade = { id: string; studentId: string; courseId: string; scheduleId: string; givenById: string; type: GradeType; value: number; date: Date };
-export type Topic = { week: number; topic: string; hours: number };
+export type Grade = { id: string; studentId: string; courseId: string; scheduleId: string; givenById: string; type: GradeType; value: number; weight: number; workType: string; date: Date };
+export type LessonRecord = { id: string; scheduleId: string; date: Date; topic: string | null; homework: string | null };
+export type Topic = SyllabusTopic;
 export type Syllabus = { id: string; courseId: string; authorId: string; reviewerId: string | null; title: string; topics: Topic[]; totalHours: number; status: SyllabusStatus; reviewNote: string | null; updatedAt: Date };
 export type Booking = { id: string; roomId: string; userId: string; startTime: Date; endTime: Date; reason: string; status: BookingStatus };
 export type Certificate = { id: string; studentId: string; reviewerId: string | null; fileName: string; fileData: string | null; startDate: Date; endDate: Date; status: CertificateStatus; reviewNote: string | null; createdAt: Date };
@@ -34,12 +39,12 @@ export type Slip = { student: string; group: string; parentName: string; parentI
 export type Db = {
   version: number;
   users: User[]; groups: Group[]; courses: Course[]; rooms: Room[]; lessons: Lesson[];
-  attendance: Attendance[]; grades: Grade[]; syllabi: Syllabus[]; bookings: Booking[];
+  attendance: Attendance[]; grades: Grade[]; syllabi: Syllabus[]; bookings: Booking[]; lessonRecords: LessonRecord[];
   certificates: Certificate[]; announcements: Announcement[]; rules: Rule[]; parentLinks: ParentLink[];
   curator: CuratorData;
 };
 
-const VERSION = 2;
+const VERSION = 3;
 const KEY = "jihc-demo-db";
 const SESSION_KEY = "jihc-demo-user";
 
@@ -61,9 +66,9 @@ function generate(): Db {
     return rand() < 0.5 ? `${pick(MALE)} ${sn}${v ? "ев" : "ов"}` : `${pick(FEMALE)} ${sn}${v ? "ева" : "ова"}`;
   };
 
-  const db: Db = { version: VERSION, users: [], groups: [], courses: [], rooms: [], lessons: [], attendance: [], grades: [], syllabi: [], bookings: [], certificates: [], announcements: [], rules: [], parentLinks: [],
+  const db: Db = { version: VERSION, users: [], groups: [], courses: [], rooms: [], lessons: [], attendance: [], grades: [], syllabi: [], lessonRecords: [], bookings: [], certificates: [], announcements: [], rules: [], parentLinks: [],
     curator: { profiles: {}, guardians: [], contacts: [], tasks: [], events: [], achievements: [], books: [], tests: [], reflections: [] } };
-  const groups: Group[] = ["2F-1", "2D-1", "3F-3", "1P-2"].map((name) => ({ id: uid(), name, curatorId: null }));
+  const groups: Group[] = ["2F-1", "2D-1", "3F-3", "1P-2"].map((name) => ({ id: uid(), name, snationCode: suggestSnationCode(name), curatorId: null }));
   db.groups = groups;
   const [g2F1, g2D1, g3F3, g1P2] = groups;
 
@@ -141,11 +146,16 @@ function generate(): Db {
       for (const st of students.filter((x) => x.groupId === l.groupId)) {
         const r = rand();
         const absentP = truant.has(st.id) ? 0.3 : 0.06;
-        const status: AttendanceStatus = r < absentP ? "ABSENT" : r < absentP + 0.05 ? "LATE" : r < absentP + 0.07 ? "EXCUSED" : "PRESENT";
+        const status: AttendanceStatus =
+          r < absentP ? "ABSENT" : r < absentP + 0.05 ? "LATE" : r < absentP + 0.07 ? "EXCUSED" : r < absentP + 0.08 ? "LEFT_EARLY" : "PRESENT";
         db.attendance.push({ id: uid(), studentId: st.id, courseId: l.courseId, scheduleId: l.id, markedById: l.teacherId, date, status });
         if (status !== "ABSENT" && status !== "EXCUSED" && rand() < 0.45) {
           const value = Math.round(Math.min(100, Math.max(30, skill.get(st.id)! + (rand() - 0.5) * 25)));
-          db.grades.push({ id: uid(), studentId: st.id, courseId: l.courseId, scheduleId: l.id, givenById: l.teacherId, value, date, type: back === 14 ? "MIDTERM" : "CURRENT" });
+          const control = back === 14;
+          db.grades.push({
+            id: uid(), studentId: st.id, courseId: l.courseId, scheduleId: l.id, givenById: l.teacherId, value, date,
+            type: control ? "MIDTERM" : "CURRENT", weight: control ? 2 : 1, workType: control ? "examination" : rand() < 0.3 ? "laboratory" : "simple",
+          });
         }
       }
     }
@@ -159,12 +169,15 @@ function generate(): Db {
   db.certificates = [cert(demoStudent.id, 20, 18, "APPROVED"), cert(students[3].id, 4, 2, "PENDING"), cert(students[17].id, 6, 5, "PENDING"), cert(students[30].id, 10, 9, "REJECTED", "Мөрі анық емес")];
 
   db.syllabi = [
-    {
-      id: uid(), courseId: graph.id, authorId: teacher.id, reviewerId: null, title: "Graph Design — 2026-2027 оқу жылы, 1-семестр", totalHours: 30, status: "PENDING", reviewNote: null, updatedAt: daysAgo(2),
-      topics: [{ week: 1, topic: "Графикалық дизайнға кіріспе", hours: 4 }, { week: 2, topic: "Түс теориясы", hours: 4 }, { week: 3, topic: "Типографика негіздері", hours: 6 }, { week: 4, topic: "Adobe Illustrator: векторлық графика", hours: 8 }, { week: 5, topic: "Логотип жасау", hours: 8 }],
-    },
-    { id: uid(), courseId: ikt.id, authorId: teacher.id, reviewerId: zavuch.id, title: "АКТ — 2-курс, 1-семестр", totalHours: 8, status: "APPROVED", reviewNote: null, updatedAt: daysAgo(12), topics: [{ week: 1, topic: "Цифрлық сауаттылық", hours: 4 }, { week: 2, topic: "Бұлттық сервистер", hours: 4 }] },
+    { id: uid(), courseId: graph.id, authorId: teacher.id, reviewerId: null, title: "Graph Design — 2026-2027 оқу жылы, 1-семестр", topics: GRAPH_PLAN, totalHours: totals(GRAPH_PLAN).all, status: "PENDING", reviewNote: null, updatedAt: daysAgo(2) },
+    { id: uid(), courseId: ikt.id, authorId: teacher.id, reviewerId: zavuch.id, title: "ЖММ 2 — 2D-1, 3-семестр", topics: IKT_PLAN, totalHours: totals(IKT_PLAN).all, status: "APPROVED", reviewNote: null, updatedAt: daysAgo(12) },
   ];
+  // Lesson topics for the ЖММ 2 lessons that already happened, taken from the plan in order.
+  const iktDays = [...new Set(db.attendance.filter((a) => a.courseId === ikt.id && a.scheduleId).map((a) => `${a.scheduleId}|${a.date.toISOString()}`))].sort((a, b) => a.split("|")[1].localeCompare(b.split("|")[1]));
+  db.lessonRecords = iktDays.map((k, i) => {
+    const [scheduleId, date] = k.split("|");
+    return { id: uid(), scheduleId, date: new Date(date), topic: IKT_PLAN[i % IKT_PLAN.length].topic, homework: i % 2 ? "Тақырып бойынша практикалық тапсырманы аяқтау" : null };
+  });
 
   const at = (d: number, h: number) => {
     const x = new Date();

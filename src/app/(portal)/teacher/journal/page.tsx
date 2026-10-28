@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DAYS, periodRange, dayName } from "@/lib/bells";
 import { ATTENDANCE_SHORT, gradeTone } from "@/lib/grades";
+import { journalColumns, pickPlan } from "@/lib/journal";
+import { normalizeTopics } from "@/lib/syllabus";
 import { formatDate, parseISODate, toISODate, cn } from "@/lib/utils";
 import { JournalEditor } from "./journal-editor";
 
@@ -38,28 +40,22 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
   const date = sp.date ?? lastDateFor(lesson.dayOfWeek);
   const day = parseISODate(date);
   const students = await prisma.user.findMany({ where: { groupId: lesson.groupId, role: "STUDENT" }, orderBy: { name: "asc" } });
-  const [attendance, grades, certs, history] = await Promise.all([
+  const [attendance, grades, certs, history, record, syllabi] = await Promise.all([
     prisma.attendance.findMany({ where: { scheduleId: lesson.id, date: day } }),
-    prisma.grade.findMany({ where: { scheduleId: lesson.id, date: day, type: "CURRENT" } }),
+    prisma.grade.findMany({ where: { scheduleId: lesson.id, date: day } }),
     prisma.medicalCertificate.findMany({ where: { status: "APPROVED", studentId: { in: students.map((s) => s.id) }, startDate: { lte: day }, endDate: { gte: day } } }),
     prisma.attendance.findMany({
       where: { courseId: lesson.courseId, student: { groupId: lesson.groupId } },
       orderBy: { date: "desc" },
       select: { studentId: true, date: true, status: true },
     }),
+    prisma.lessonRecord.findUnique({ where: { scheduleId_date: { scheduleId: lesson.id, date: day } } }),
+    prisma.syllabus.findMany({ where: { courseId: lesson.courseId, authorId: lesson.teacherId } }),
   ]);
+  const plan = pickPlan(syllabi);
   const historyGrades = await prisma.grade.findMany({ where: { courseId: lesson.courseId, student: { groupId: lesson.groupId } } });
 
-  const initial = Object.fromEntries(
-    students.map((s) => [
-      s.id,
-      {
-        status: attendance.find((a) => a.studentId === s.id)?.status ?? undefined,
-        grade: grades.find((g) => g.studentId === s.id)?.value.toString() ?? "",
-      },
-    ]).filter(([, v]) => (v as { status?: string }).status),
-  );
-
+  const status = Object.fromEntries(attendance.map((a) => [a.studentId, a.status]));
   const dates = [...new Set(history.map((h) => h.date.toISOString().slice(0, 10)))].slice(0, 10).reverse();
   const sameDays = mine.filter((l) => l.groupId === lesson.groupId && l.courseId === lesson.courseId);
 
@@ -94,8 +90,12 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
             </CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
               {formatDate(day)}, {dayName(lesson.dayOfWeek)} · {periodRange(lesson.startPeriod, lesson.endPeriod)} · {lesson.room.name}
+              {lesson.group.snationCode && <> · Smart Nation: {lesson.group.snationCode}</>}
             </p>
           </div>
+          <Link href={`/teacher/gradebook?lesson=${lesson.id}`} className="text-xs text-primary hover:underline">
+            Бағалар кітабы
+          </Link>
         </CardHeader>
         <CardContent>
           {((day.getUTCDay() + 6) % 7) + 1 !== lesson.dayOfWeek ? (
@@ -108,7 +108,10 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
               lessonId={lesson.id}
               date={date}
               students={students.map((s) => ({ id: s.id, name: s.name }))}
-              initial={initial as Record<string, { status: "PRESENT"; grade: string }>}
+              status={status}
+              columns={journalColumns(grades)}
+              record={{ topic: record?.topic ?? "", homework: record?.homework ?? "" }}
+              planTopics={plan ? normalizeTopics(plan.topics).map((t) => ({ chapter: t.chapter, topic: t.topic })) : []}
               excused={certs.map((c) => c.studentId)}
             />
           )}

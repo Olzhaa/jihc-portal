@@ -27,13 +27,16 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   LATE
+  LEFT_EARLY // ерте кетті (EduPage: «Ушел раньше»)
   EXCUSED
 }
 
+// Баға категориялары EduPage-тегі колледж бекіткен бағандармен сәйкес (src/lib/assessment.ts)
 enum GradeType {
-  CURRENT // ағымдағы
-  MIDTERM // аралық
-  EXAM // сессиялық
+  CURRENT // Ағымдағы бағалар
+  MIDTERM // Ағымдағы бақылау
+  EXAM // Емтихан немесе сынақ
+  ATTENDANCE // Сабаққа қатысуы
 }
 
 enum SyllabusStatus {
@@ -110,7 +113,8 @@ model ParentLink {
 
 model Group {
   id            String         @id @default(uuid())
-  name          String         @unique // e.g., "CS-22-01"
+  name          String         @unique // EduPage атауы, мысалы "2F-1"
+  snationCode   String? // Smart Nation-дағы атауы, мысалы "F1-2025"
   curatorId     String? // топ кураторы (завуч тағайындайды)
   curator       User?          @relation("GroupCurator", fields: [curatorId], references: [id], onDelete: SetNull)
   students      User[]
@@ -159,6 +163,7 @@ model Schedule {
 
   attendance Attendance[]
   grades     Grade[]
+  records    LessonRecord[]
 
   @@index([groupId, dayOfWeek])
   @@index([teacherId, dayOfWeek])
@@ -191,6 +196,8 @@ model Grade {
   givenById  String
   type       GradeType @default(CURRENT)
   value      Float
+  weight     Float     @default(1) // коэффициент: 0.25, 0.5, 1, 2, 3
+  workType   String    @default("simple") // Smart Nation баға түрі (src/lib/assessment.ts)
   comment    String?
   date       DateTime  @default(now())
 
@@ -202,13 +209,27 @@ model Grade {
   @@index([studentId, courseId])
 }
 
+// Сабақтың тақырыбы мен үй жұмысы (EduPage «Классный журнал», Smart Nation журнал күні)
+model LessonRecord {
+  id         String   @id @default(uuid())
+  scheduleId String
+  date       DateTime @db.Date
+  topic      String?
+  homework   String?
+  updatedAt  DateTime @updatedAt
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, date])
+}
+
 model Syllabus {
   id         String         @id @default(uuid())
   courseId   String
   authorId   String
   reviewerId String?
   title      String
-  topics     Json // [{ week, topic, hours }]
+  topics     Json // SyllabusTopic[] (src/lib/syllabus.ts): ОН → тақырып → сағаттар
   totalHours Int
   status     SyllabusStatus @default(DRAFT)
   reviewNote String?

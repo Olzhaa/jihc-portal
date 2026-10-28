@@ -8,7 +8,7 @@ export async function collegeStats() {
     prisma.group.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { students: true } } } }),
     prisma.$queryRaw<{ groupId: string; total: bigint; attended: bigint }[]>`
       SELECT u."groupId", COUNT(*) AS total,
-             COUNT(*) FILTER (WHERE a.status IN ('PRESENT','LATE')) AS attended
+             COUNT(*) FILTER (WHERE a.status IN ('PRESENT','LATE','LEFT_EARLY')) AS attended
       FROM "Attendance" a JOIN "User" u ON u.id = a."studentId"
       GROUP BY u."groupId"`,
     prisma.grade.groupBy({ by: ["studentId"], _avg: { value: true } }),
@@ -53,7 +53,7 @@ export async function collegeStats() {
 export async function weeklyAttendance(weeks = 8) {
   const rows = await prisma.$queryRaw<{ week: Date; total: bigint; attended: bigint }[]>`
     SELECT date_trunc('week', date) AS week, COUNT(*) AS total,
-           COUNT(*) FILTER (WHERE status IN ('PRESENT','LATE')) AS attended
+           COUNT(*) FILTER (WHERE status IN ('PRESENT','LATE','LEFT_EARLY')) AS attended
     FROM "Attendance"
     WHERE date >= now() - make_interval(weeks => ${weeks}::int)
     GROUP BY 1 ORDER BY 1`;

@@ -12,6 +12,10 @@ import { Input, Label, Select } from "@/components/ui/input";
 import { BarList, ColumnChart } from "@/components/bar-list";
 import { StatusBadge } from "@/components/status-badges";
 import { ReviewButtons } from "@/components/review-buttons";
+import { SyllabusExport } from "@/components/syllabus-editor";
+import { GroupMapping } from "@/components/group-mapping";
+import { checkSnationCode } from "@/lib/assessment";
+import { normalizeTopics } from "@/lib/syllabus";
 import { BELLS, DAYS } from "@/lib/bells";
 import { gradeTone } from "@/lib/grades";
 import { cn, formatDate } from "@/lib/utils";
@@ -287,14 +291,9 @@ export function Syllabi() {
             <CardContent className="space-y-3">
               <details open={s.status === "PENDING"}>
                 <summary className="cursor-pointer text-sm text-primary">{s.topics.length} тақырып · {s.totalHours} сағат</summary>
-                <ol className="mt-2 space-y-1 text-sm">
-                  {s.topics.map((t) => (
-                    <li key={t.week} className="flex justify-between gap-3 border-b border-border py-1">
-                      <span><span className="text-muted-foreground">{t.week}.</span> {t.topic}</span>
-                      <span className="shrink-0 text-muted-foreground">{t.hours} сағ</span>
-                    </li>
-                  ))}
-                </ol>
+                <div className="mt-2">
+                  <SyllabusExport title={`${c.title} ${s.title}`} topics={normalizeTopics(s.topics)} />
+                </div>
               </details>
               {s.status === "PENDING" ? (
                 <ReviewButtons
@@ -475,6 +474,31 @@ export function ParentPins() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+export function Groups() {
+  const db = useDb();
+  const groups = [...db.groups].sort((a, b) => a.name.localeCompare(b.name));
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Топтар: EduPage ↔ Smart Nation" description="Бір топ екі жүйеде әртүрлі аталады (мысалы 2D-1 ↔ D1-2025). Сәйкестік журнал мен экспорттарда көрсетіледі." />
+      <Card>
+        <CardContent className="pt-6">
+          <GroupMapping
+            groups={groups.map((g) => ({ id: g.id, name: g.name, snationCode: g.snationCode, students: db.users.filter((u) => u.role === "STUDENT" && u.groupId === g.id).length }))}
+            onSave={(id, code) => {
+              const checked = checkSnationCode(code);
+              if (checked !== null && typeof checked === "object") return checked;
+              mutate((d) => {
+                d.groups.find((g) => g.id === id)!.snationCode = checked;
+              });
+              return { ok: true as const };
+            }}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

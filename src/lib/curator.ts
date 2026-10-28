@@ -711,7 +711,7 @@ export function studentStats(
   grades: { studentId: string; course: string; value: number }[],
   attendance: { studentId: string; course: string; status: string }[],
 ) {
-  const rate = (xs: { status: string }[]) => (xs.length ? (xs.filter((a) => a.status === "PRESENT" || a.status === "LATE").length / xs.length) * 100 : null);
+  const rate = (xs: { status: string }[]) => (xs.length ? (xs.filter((a) => a.status === "PRESENT" || a.status === "LATE" || a.status === "LEFT_EARLY").length / xs.length) * 100 : null);
   return new Map(
     studentIds.map((id) => {
       const g = grades.filter((x) => x.studentId === id);
