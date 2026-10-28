@@ -1,23 +1,43 @@
 @import "tailwindcss";
 @source "./";
 
+/* Figma макетінің түс токендері (color/*) */
 :root {
-  --primary: #1d4ed8;
-  --navy: #0f1e3d;
+  --ink: #0b1f44;
+  --brand: #3b82f6;
+  --brand-strong: #2563eb;
+  --brand-light: #93c5fd;
+  --brand-soft: #dbeafe;
+  --brand-tint: #eff6ff;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --fg: #0f172a;
+  --muted-fg: #475569;
+  --border: #e2e8f0;
 }
 
 @theme inline {
-  --color-primary: var(--primary);
-  --color-navy: var(--navy);
+  --color-ink: var(--ink);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-light: var(--brand-light);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-tint: var(--brand-tint);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-fg: var(--fg);
+  --color-muted-fg: var(--muted-fg);
+  --color-border: var(--border);
   --font-sans: "Inter", system-ui, sans-serif;
 }
 
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 72px;
+  scroll-padding-top: 96px;
 }
 
 body {
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
