@@ -63,8 +63,8 @@ const personName = (r: Row) => [str(r.firstname), str(r.lastname)].filter(Boolea
 
 /** «КМ4 ОН 4.1, 4.3 Graph Design» → code «КМ4 ОН 4.1, 4.3», title «Graph Design». */
 export function splitSubject(name: string): { code: string | null; title: string } {
-  const m = name.match(/^((?:КМ|ҚМ|БМ|ЖММ|ЖББП|ЖКП|KM|BM)\s*\d*(?:\s*(?:ОН|ON|РО)\s*[\d.,\s]*\d)?)\s+(.+)$/i);
-  return m ? { code: m[1].trim(), title: m[2].trim() } : { code: null, title: name.trim() };
+  const m = name.trim().match(/^((?:КМ|ЖММ|ЖББП|БМ|Ф)\s*\d+\.?\s*(?:ОН\s*\d[\d.,\-\s]*\d)?)\.?\s*[-–]?\s+(.+)$/i);
+  return m ? { code: m[1].replace(/[.\s]+$/, "").trim(), title: m[2].trim() } : { code: null, title: name.trim() };
 }
 
 /** Бөлме түрін атауынан болжайды (кейін әкімші өзгерте алады). */
@@ -95,10 +95,14 @@ const daysFromMask = (mask: string) =>
 
 export function parseExport(dir: string): EduData {
   const warnings: string[] = [];
+  // bundle.json = { regulartt, userhome, ttviewer } бір файлда; болмаса бөлек файлдар.
+  const bundlePath = join(dir, "bundle.json");
+  const bundle = existsSync(bundlePath) ? (readJson(bundlePath) as { regulartt?: unknown; userhome?: unknown }) : {};
   const ttPath = join(dir, "regulartt.json");
   const uhPath = join(dir, "userhome.json");
-  const tt = existsSync(ttPath) ? ttTables(readJson(ttPath)) : new Map<string, Row[]>();
-  const uh = existsSync(uhPath) ? (readJson(uhPath) as { dbi?: Record<string, unknown> }) : undefined;
+  const ttRaw = bundle.regulartt ?? (existsSync(ttPath) ? readJson(ttPath) : undefined);
+  const tt = ttRaw ? ttTables(ttRaw) : new Map<string, Row[]>();
+  const uh = (bundle.userhome ?? (existsSync(uhPath) ? readJson(uhPath) : undefined)) as { dbi?: Record<string, unknown> } | undefined;
   const dbi = uh?.dbi ?? (uh as Record<string, unknown> | undefined);
   if (!tt.size) warnings.push("regulartt.json жоқ: кесте импортталмайды");
   if (!uh) warnings.push("userhome.json жоқ: студенттер импортталмайды, мұғалімдердің толық аты болмауы мүмкін");
@@ -107,7 +111,7 @@ export function parseExport(dir: string): EduData {
   const teachers = new Map<string, EduTeacher>();
   for (const r of dbiTable(dbi, "teachers")) {
     const id = str(r.id);
-    if (!id || str(r.dateto)) continue; // dateto толса — жұмыстан кеткен
+    if (!id || str(r.dateto) || r.isOut === true) continue; // жұмыстан кеткен
     teachers.set(id, { edupageId: id, name: personName(r), short: str(r.short), email: str(r.email) || null });
   }
   const teacherAlias = new Map<string, string>(); // кестедегі id → userhome id (id-лер сәйкес келмесе)
@@ -123,7 +127,13 @@ export function parseExport(dir: string): EduData {
   const groups = new Map<string, EduGroup>();
   for (const r of [...(tt.get("classes") ?? []), ...dbiTable(dbi, "classes")]) {
     const id = str(r.id);
-    if (!id || groups.has(id)) continue;
+    if (!id) continue;
+    const curator = str(r.teacherid);
+    const known = groups.get(id);
+    if (known) {
+      if (!known.curatorEdupageId && curator) known.curatorEdupageId = teacherAlias.get(curator) ?? curator;
+      continue;
+    }
     groups.set(id, { edupageId: id, name: str(r.short) || str(r.name), curatorEdupageId: str(r.teacherid) ? (teacherAlias.get(str(r.teacherid)) ?? str(r.teacherid)) : null });
   }
 
@@ -149,7 +159,7 @@ export function parseExport(dir: string): EduData {
   const students: EduStudent[] = [];
   for (const r of dbiTable(dbi, "students")) {
     const id = str(r.id);
-    if (!id || str(r.dateto)) continue;
+    if (!id || str(r.dateto) || r.isOut === true) continue; // оқудан шыққан
     const classId = str(r.classid) || null;
     if (classId && !groups.has(classId)) warnings.push(`студент ${id}: белгісіз класс ${classId}`);
     students.push({ edupageId: id, name: personName(r), groupEdupageId: classId });
