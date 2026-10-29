@@ -7,6 +7,7 @@ import { useDb } from "../store";
 import { byId, lessonsForGroup, studentGradebook, studentOverview } from "../queries";
 import { useRoute } from "../router";
 import { useMe } from "../hooks";
+import { StudentResults } from "./results";
 
 function useChild() {
   const me = useMe();
@@ -26,6 +27,7 @@ export function Home() {
       <PageHeader title={child.name} description={`${o.student.group?.name ?? ""} тобы · тек қарау режимі`} actions={<ChildSwitcher items={children} current={child.id} />} />
       <OverviewStats o={o as never} />
       <OverviewWidgets o={o as never} scheduleHref={`/parent/schedule?child=${child.id}`} gradesHref={`/parent?child=${child.id}`} />
+      <StudentResults studentId={child.id} />
       <div>
         <h2 className="mb-3 text-lg font-semibold">Пәндер бойынша үлгерім</h2>
         <GradebookView book={studentGradebook(db, child.id) as never} />

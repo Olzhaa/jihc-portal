@@ -12,6 +12,7 @@ import * as director from "./pages/director";
 import * as parent from "./pages/parent";
 import * as common from "./pages/common";
 import * as curator from "./pages/curator";
+import * as results from "./pages/results";
 
 const ROUTES: Record<string, ComponentType> = {
   "/student": student.Dashboard,
@@ -32,6 +33,7 @@ const ROUTES: Record<string, ComponentType> = {
   "/teacher/curator/cycle": curator.Cycle,
   "/teacher/curator/events": curator.Events,
   "/teacher/curator/guides": curator.Guides,
+  "/teacher/curator/results": results.Curator,
   "/academic-director": manager.Stats,
   "/academic-director/timetable": manager.Timetable,
   "/academic-director/certificates": manager.Certificates,
@@ -40,6 +42,8 @@ const ROUTES: Record<string, ComponentType> = {
   "/academic-director/parents": manager.ParentPins,
   "/academic-director/groups": manager.Groups,
   "/academic-director/curators": curator.Curators,
+  "/academic-director/results": results.Results,
+  "/academic-director/results/settings": results.Settings,
   "/director": director.Dashboard,
   "/director/users": director.Users,
   "/parent": parent.Home,

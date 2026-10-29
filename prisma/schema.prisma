@@ -39,6 +39,14 @@ enum GradeType {
   ATTENDANCE // Сабаққа қатысуы
 }
 
+// Smart Nation «Қорытындылар» бағандары
+enum FinalPeriod {
+  SEMESTER1 // 1-жартыжылдық
+  SEMESTER2 // 2-жартыжылдық
+  YEAR // жылдық баға
+  EXAM // емтихан бағасы
+}
+
 enum SyllabusStatus {
   DRAFT
   PENDING
@@ -102,6 +110,8 @@ model User {
   books           BookRead[]
   testResults     TestResult[]
   reflections     Reflection[]
+  finalGrades     FinalGrade[]         @relation("FinalGrades")
+  setFinalGrades  FinalGrade[]         @relation("FinalGradeSetBy")
 }
 
 model ParentLink {
@@ -139,6 +149,7 @@ model Course {
   assignments Assignment[]
   attendance  Attendance[]
   syllabi     Syllabus[]
+  finalGrades FinalGrade[]
 }
 
 model Room {
@@ -238,6 +249,34 @@ model Assignment {
   grades    Grade[]
 
   @@index([courseId, groupId])
+}
+
+/// Бекітілген немесе қолмен енгізілген қорытынды баға (src/lib/results.ts).
+/// Жазба жоқ болса, баға журналдан формула бойынша есептеледі.
+model FinalGrade {
+  id           String      @id @default(uuid())
+  studentId    String
+  courseId     String
+  academicYear Int // оқу жылы басталған жыл: 2026 = 2026–2027
+  period       FinalPeriod
+  value        Float
+  manual       Boolean     @default(false) // true — қолмен енгізілген, false — есептелген мәні бекітілген
+  setById      String
+  updatedAt    DateTime    @updatedAt
+
+  student User   @relation("FinalGrades", fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  setBy   User   @relation("FinalGradeSetBy", fields: [setById], references: [id])
+
+  @@unique([studentId, courseId, academicYear, period])
+  @@index([courseId, academicYear])
+}
+
+/// Порталдың баптаулары (кілт → JSON), мысалы қорытынды баға формуласы.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }
 
 // Сабақтың тақырыбы мен үй жұмысы (EduPage «Классный журнал», Smart Nation журнал күні)

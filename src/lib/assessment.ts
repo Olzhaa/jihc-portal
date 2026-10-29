@@ -88,6 +88,16 @@ export function academicYearStart(today = new Date()) {
   return today.getMonth() >= 7 ? today.getFullYear() : today.getFullYear() - 1;
 }
 
+/** Оқу жылының шекаралары, Prisma `date` сүзгісі үшін: 1 тамыз — келесі жылдың 1 тамызы (halfYear-мен сәйкес). */
+export function academicYearRange(year = academicYearStart()) {
+  return { gte: new Date(Date.UTC(year, 7, 1)), lt: new Date(Date.UTC(year + 1, 7, 1)) };
+}
+
+export function inAcademicYear(d: Date, year = academicYearStart()) {
+  const r = academicYearRange(year);
+  return d >= r.gte && d < r.lt;
+}
+
 /**
  * EduPage топ атауынан Smart Nation атауын болжайды:
  * `{курс}{әріп}-{n}` → `{әріп}{n}-{түскен жыл}`, мысалы 2026 жылы 3F-3 → F3-2024.

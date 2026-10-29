@@ -13,6 +13,7 @@ import {
   type CuratorApi, type CuratorRecord, type RecordKind, type Reflection, type Workspace,
 } from "@/lib/curator";
 import { STAFF_ROLES } from "@/lib/roles";
+import { inAcademicYear } from "@/lib/assessment";
 import { getDb, mutate, uid, useDb, type CuratorData, type Db } from "../store";
 import { byId } from "../queries";
 import { useRoute } from "../router";
@@ -38,8 +39,8 @@ function workspaceFor(db: Db, userId: string, groupId: string | null): Workspace
   const course = (id: string) => byId(db.courses, id)?.title ?? "";
   const stats = studentStats(
     [...ids],
-    db.grades.filter((g) => ids.has(g.studentId)).map((g) => ({ studentId: g.studentId, course: course(g.courseId), value: g.value })),
-    db.attendance.filter((a) => ids.has(a.studentId)).map((a) => ({ studentId: a.studentId, course: course(a.courseId), status: a.status })),
+    db.grades.filter((g) => ids.has(g.studentId) && inAcademicYear(g.date)).map((g) => ({ studentId: g.studentId, course: course(g.courseId), value: g.value })),
+    db.attendance.filter((a) => ids.has(a.studentId) && inAcademicYear(a.date)).map((a) => ({ studentId: a.studentId, course: course(a.courseId), status: a.status })),
   );
   return {
     group: { id: group.id, name: group.name, course: groupCourse(group.name) },

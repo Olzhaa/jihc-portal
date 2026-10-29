@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { isoWeekday } from "./utils";
 import { attendanceRate, gpaFromAverage } from "./grades";
-import { byCategory, weightedAverage } from "./assessment";
+import { academicYearRange, byCategory, weightedAverage } from "./assessment";
 import { lessonsForGroup } from "./schedule";
 import { announcementsFor } from "./announcements";
 
@@ -10,8 +10,8 @@ export async function studentOverview(studentId: string) {
   const student = await prisma.user.findUniqueOrThrow({ where: { id: studentId }, include: { group: true } });
   const [lessons, grades, attendance, announcements] = await Promise.all([
     student.groupId ? lessonsForGroup(student.groupId) : Promise.resolve([]),
-    prisma.grade.findMany({ where: { studentId }, include: { course: true }, orderBy: { date: "desc" } }),
-    prisma.attendance.findMany({ where: { studentId }, select: { status: true } }),
+    prisma.grade.findMany({ where: { studentId, date: academicYearRange() }, include: { course: true }, orderBy: { date: "desc" } }),
+    prisma.attendance.findMany({ where: { studentId, date: academicYearRange() }, select: { status: true } }),
     announcementsFor(student.groupId, 3),
   ]);
   const avg = weightedAverage(grades);
@@ -28,11 +28,11 @@ export async function studentOverview(studentId: string) {
   };
 }
 
-/** Per-course grade book: grades by EduPage category, weighted average and attendance. */
+/** Per-course grade book for the current academic year: grades by EduPage category, weighted average and attendance. */
 export async function studentGradebook(studentId: string) {
   const [grades, attendance] = await Promise.all([
-    prisma.grade.findMany({ where: { studentId }, include: { course: true }, orderBy: { date: "asc" } }),
-    prisma.attendance.findMany({ where: { studentId }, include: { course: true }, orderBy: { date: "asc" } }),
+    prisma.grade.findMany({ where: { studentId, date: academicYearRange() }, include: { course: true }, orderBy: { date: "asc" } }),
+    prisma.attendance.findMany({ where: { studentId, date: academicYearRange() }, include: { course: true }, orderBy: { date: "asc" } }),
   ]);
   const courses = new Map<string, { id: string; title: string; code: string | null; color: string }>();
   for (const r of [...grades, ...attendance]) courses.set(r.course.id, r.course);

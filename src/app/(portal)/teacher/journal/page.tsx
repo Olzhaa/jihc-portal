@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { STAFF_ROLES } from "@/lib/roles";
+import { academicYearRange } from "@/lib/assessment";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DAYS, periodRange, dayName } from "@/lib/bells";
@@ -45,7 +46,7 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
     prisma.grade.findMany({ where: { scheduleId: lesson.id, date: day } }),
     prisma.medicalCertificate.findMany({ where: { status: "APPROVED", studentId: { in: students.map((s) => s.id) }, startDate: { lte: day }, endDate: { gte: day } } }),
     prisma.attendance.findMany({
-      where: { courseId: lesson.courseId, student: { groupId: lesson.groupId } },
+      where: { courseId: lesson.courseId, student: { groupId: lesson.groupId }, date: academicYearRange() },
       orderBy: { date: "desc" },
       select: { studentId: true, date: true, status: true },
     }),
@@ -53,7 +54,7 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
     prisma.syllabus.findMany({ where: { courseId: lesson.courseId, authorId: lesson.teacherId } }),
   ]);
   const plan = pickPlan(syllabi);
-  const historyGrades = await prisma.grade.findMany({ where: { courseId: lesson.courseId, student: { groupId: lesson.groupId } } });
+  const historyGrades = await prisma.grade.findMany({ where: { courseId: lesson.courseId, student: { groupId: lesson.groupId }, date: academicYearRange() } });
 
   const status = Object.fromEntries(attendance.map((a) => [a.studentId, a.status]));
   const dates = [...new Set(history.map((h) => h.date.toISOString().slice(0, 10)))].slice(0, 10).reverse();
