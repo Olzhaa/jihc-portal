@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { academicYearRange } from "./assessment";
 import { KIND_FIELDS, dateFields, groupCourse, studentStats, type CuratorRecord, type Reflection, type Workspace } from "./curator";
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -39,8 +40,8 @@ export async function loadWorkspace(userId: string, groupId?: string): Promise<W
     prisma.bookRead.findMany({ where: inGroup, orderBy: { startedAt: "desc" } }),
     prisma.testResult.findMany({ where: inGroup, orderBy: { date: "desc" } }),
     prisma.reflection.findMany({ where: inGroup, orderBy: { createdAt: "desc" } }),
-    prisma.grade.findMany({ where: inGroup, select: { studentId: true, value: true, course: { select: { title: true } } } }),
-    prisma.attendance.findMany({ where: inGroup, select: { studentId: true, status: true, course: { select: { title: true } } } }),
+    prisma.grade.findMany({ where: { ...inGroup, date: academicYearRange() }, select: { studentId: true, value: true, course: { select: { title: true } } } }),
+    prisma.attendance.findMany({ where: { ...inGroup, date: academicYearRange() }, select: { studentId: true, status: true, course: { select: { title: true } } } }),
   ]);
   const stats = studentStats(
     ids,

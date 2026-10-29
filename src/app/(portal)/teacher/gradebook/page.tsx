@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MANAGER_ROLES, STAFF_ROLES } from "@/lib/roles";
+import { academicYearRange } from "@/lib/assessment";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GradebookClient } from "./gradebook-client";
@@ -29,11 +30,13 @@ export default async function GradebookPage({ searchParams }: { searchParams: Pr
     );
   }
 
+  // The gradebook shows the current academic year; earlier years are on the «Қорытындылар» page.
+  const year = academicYearRange();
   const [students, grades, attendance, assignments] = await Promise.all([
     prisma.user.findMany({ where: { groupId: current.groupId, role: "STUDENT" }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.grade.findMany({ where: { courseId: current.courseId, student: { groupId: current.groupId } } }),
-    prisma.attendance.findMany({ where: { courseId: current.courseId, student: { groupId: current.groupId } }, include: { schedule: true } }),
-    prisma.assignment.findMany({ where: { courseId: current.courseId, groupId: current.groupId } }),
+    prisma.grade.findMany({ where: { courseId: current.courseId, student: { groupId: current.groupId }, date: year } }),
+    prisma.attendance.findMany({ where: { courseId: current.courseId, student: { groupId: current.groupId }, date: year }, include: { schedule: true } }),
+    prisma.assignment.findMany({ where: { courseId: current.courseId, groupId: current.groupId, date: year } }),
   ]);
   const title = `${current.group.name} ${current.course.title}`;
 

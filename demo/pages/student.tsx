@@ -11,6 +11,7 @@ import { formatDate, isoWeekday, parseISODate } from "@/lib/utils";
 import { mutate, uid, useDb } from "../store";
 import { lessonsForGroup, studentGradebook, studentOverview, byId } from "../queries";
 import { readFileAsDataUrl, useMe } from "../hooks";
+import { StudentResults } from "./results";
 
 export function Dashboard() {
   const me = useMe();
@@ -40,6 +41,7 @@ export function Grades() {
   return (
     <div>
       <PageHeader title="Бағалар журналы" description="Ағымдағы, аралық және сессиялық бағалар (100 балдық шкала)" />
+      <StudentResults studentId={me.id} />
       <GradebookView book={studentGradebook(useDb(), me.id) as never} />
     </div>
   );
