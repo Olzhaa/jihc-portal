@@ -26,15 +26,16 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     : [];
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0f1e3d] via-[#1e3a8a] to-[#1d4ed8] p-4">
+    <div className="login-stage flex min-h-[100dvh] items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <a href={SITE_URL} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-blue-100 hover:text-white">
+        <a href={SITE_URL} className="mb-5 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3.5 py-1.5 text-sm font-medium text-blue-100 ring-1 ring-inset ring-white/10 transition-colors duration-300 hover:bg-white/10 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Басты бетке
         </a>
-        <div className="rounded-2xl bg-card p-8 shadow-2xl">
+        <div className="rounded-[2rem] bg-white/[0.06] p-1.5 ring-1 ring-inset ring-white/10">
+        <div className="rounded-[calc(2rem-0.375rem)] bg-card p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_32px_64px_-24px_rgba(0,0,0,0.6)] md:p-8">
         <div className="mb-6 text-center">
           <JihcLogo className="mx-auto mb-3 h-20 w-20 text-foreground" />
-          <h1 className="text-2xl font-bold">JIHC Portal</h1>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em]">JIHC Portal</h1>
           <p className="text-sm text-muted-foreground">Жамбыл инновациялық жоғары колледжі</p>
         </div>
         {error && (
@@ -46,6 +47,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           googleEnabled={Boolean(process.env.GOOGLE_CLIENT_ID)}
           demoUsers={demoUsers.map((u) => ({ email: u.email!, name: u.name, role: ROLE_LABEL[u.role] }))}
         />
+        </div>
         </div>
       </div>
     </div>

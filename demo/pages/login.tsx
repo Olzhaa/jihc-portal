@@ -23,15 +23,16 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0f1e3d] via-[#1e3a8a] to-[#1d4ed8] p-4">
+    <div className="login-stage flex min-h-[100dvh] items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <a href={SITE_URL} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-blue-100 hover:text-white">
+        <a href={SITE_URL} className="mb-5 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3.5 py-1.5 text-sm font-medium text-blue-100 ring-1 ring-inset ring-white/10 transition-colors duration-300 hover:bg-white/10 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Басты бетке
         </a>
-        <div className="rounded-2xl bg-card p-8 shadow-2xl">
+        <div className="rounded-[2rem] bg-white/[0.06] p-1.5 ring-1 ring-inset ring-white/10">
+        <div className="rounded-[calc(2rem-0.375rem)] bg-card p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_32px_64px_-24px_rgba(0,0,0,0.6)] md:p-8">
         <div className="mb-6 text-center">
           <JihcLogo className="mx-auto mb-3 h-20 w-20 text-foreground" />
-          <h1 className="text-2xl font-bold">JIHC Portal</h1>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em]">JIHC Portal</h1>
           <p className="text-sm text-muted-foreground">Жамбыл инновациялық жоғары колледжі</p>
           <p className="mt-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
             Демо нұсқа: деректер ойдан құралған және тек осы браузерде сақталады.
@@ -39,9 +40,9 @@ export function LoginPage() {
         </div>
         {error && <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">{error}</div>}
         <div className="space-y-5">
-          <div className="grid grid-cols-2 rounded-lg bg-muted p-1 text-sm">
+          <div className="grid grid-cols-2 rounded-full bg-muted p-1 text-sm">
             {(["staff", "parent"] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)} className={`rounded-md py-1.5 font-medium ${tab === t ? "bg-card shadow-sm" : "text-muted-foreground"}`}>
+              <button key={t} onClick={() => setTab(t)} className={`rounded-full py-2 font-medium transition-all duration-500 ease-spring ${tab === t ? "bg-card shadow-[0_1px_2px_rgba(15,23,42,0.08),0_4px_12px_-4px_rgba(15,23,42,0.12)]" : "text-muted-foreground hover:text-foreground"}`}>
                 {t === "staff" ? "Студент / Қызметкер" : "Ата-ана"}
               </button>
             ))}
@@ -95,6 +96,7 @@ export function LoginPage() {
               Демо деректерді бастапқы күйге қайтару
             </button>
           </div>
+        </div>
         </div>
         </div>
       </div>

@@ -2,38 +2,58 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Design language: "soft structuralism" from the high-end-visual-design skill, adapted for a
+ * dense daily-use portal. Silver-grey canvas, white cards that sit in a soft bezel instead of a
+ * flat 1px grey border, diffused ambient shadows, pill controls, thin-line icons, Geist type and
+ * spring easing. Whitespace is generous but tables and the gradebook keep their density.
+ */
 :root {
-  --background: #f5f7fb;
-  --foreground: #0f172a;
+  --background: #f3f4f7;
+  --foreground: #0b1324;
   --card: #ffffff;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --primary: #1d4ed8;
+  --muted: #eef0f4;
+  --muted-foreground: #5d6779;
+  --border: #e4e7ed;
+  --primary: #1f46c9;
   --primary-foreground: #ffffff;
-  --secondary: #e0e7ff;
-  --secondary-foreground: #1e3a8a;
-  --ring: #93c5fd;
-  --sidebar: #0f1e3d;
-  --sidebar-foreground: #cbd5e1;
-  --sidebar-active: #1e3a8a;
+  --secondary: #e7ecfb;
+  --secondary-foreground: #1b2f73;
+  --ring: #1f46c9;
+  --sidebar: #0c1834;
+  --sidebar-foreground: #a9b4ca;
+  --sidebar-active: rgba(255, 255, 255, 0.09);
+
+  /* The bezel: a faint outer tray plus its hairline, drawn with box-shadow so a Card stays one element. */
+  --bezel: 0 0 0 5px rgba(15, 23, 42, 0.02), 0 0 0 6px rgba(15, 23, 42, 0.04);
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px -12px rgba(15, 23, 42, 0.1);
+  --shadow-float: 0 1px 2px rgba(15, 23, 42, 0.05), 0 24px 48px -20px rgba(15, 23, 42, 0.22);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
-  --background: #0b1120;
-  --foreground: #e2e8f0;
-  --card: #111a2e;
-  --muted: #1a2540;
-  --muted-foreground: #94a3b8;
-  --border: #23304d;
-  --primary: #3b82f6;
+  --background: #070b16;
+  --foreground: #e6eaf2;
+  --card: #0f1626;
+  --muted: #161f33;
+  --muted-foreground: #8f9ab0;
+  --border: #1f2a40;
+  --primary: #4f7bff;
   --primary-foreground: #ffffff;
-  --secondary: #1e2a4a;
-  --secondary-foreground: #c7d2fe;
-  --ring: #1d4ed8;
-  --sidebar: #080f1f;
-  --sidebar-foreground: #94a3b8;
-  --sidebar-active: #1e3a8a;
+  --secondary: #17213b;
+  --secondary-foreground: #c9d4ff;
+  --ring: #4f7bff;
+  --sidebar: #0a1122;
+  --sidebar-foreground: #8f9ab0;
+  --sidebar-active: rgba(255, 255, 255, 0.07);
+
+  --bezel: 0 0 0 5px rgba(255, 255, 255, 0.02), 0 0 0 6px rgba(255, 255, 255, 0.05);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -12px rgba(0, 0, 0, 0.5);
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 24px 48px -20px rgba(0, 0, 0, 0.7);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 @theme inline {
@@ -51,13 +71,106 @@
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-active: var(--sidebar-active);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-geist);
+  --ease-spring: var(--ease-spring);
+  --ease-out-soft: var(--ease-out-soft);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grid items may shrink below their content width, so one long title or a wide table inside a
+   card scrolls on its own instead of pushing the whole page sideways on phones. In the base
+   layer so any explicit min-w-* utility still wins. */
+@layer base {
+  .grid > * {
+    min-width: 0;
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+/* Thin-line icons everywhere: Lucide stays, at a lighter stroke. */
+svg.lucide {
+  stroke-width: 1.6;
+}
+
+/* Every interactive element eases on the spring curve instead of the default ease. */
+a,
+button,
+input,
+select,
+textarea {
+  transition-timing-function: var(--ease-spring);
+}
+
+@utility bezel {
+  box-shadow: var(--bezel), var(--shadow-soft), var(--highlight);
+}
+
+@utility float-shadow {
+  box-shadow: var(--shadow-float);
+}
+
+@utility eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Login backdrop: deep JIHC navy with two soft brand glows. Static, so it costs nothing to paint. */
+@utility login-stage {
+  background:
+    radial-gradient(60rem 40rem at 10% -10%, rgba(79, 123, 255, 0.35), transparent 60%),
+    radial-gradient(50rem 36rem at 110% 110%, rgba(56, 189, 248, 0.18), transparent 60%),
+    #070f24;
+}
+
+/* Page entry: content rises in, staggered, on the spring curve. Transform and opacity only. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .page-enter > * > * {
+    animation: rise 0.7s var(--ease-out-soft) both;
+  }
+  .page-enter > * > *:nth-child(2) {
+    animation-delay: 60ms;
+  }
+  .page-enter > * > *:nth-child(3) {
+    animation-delay: 120ms;
+  }
+  .page-enter > * > *:nth-child(4) {
+    animation-delay: 180ms;
+  }
+  .page-enter > * > *:nth-child(n + 5) {
+    animation-delay: 240ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Printing parent PIN slips: only the slips, no app chrome. */
@@ -70,8 +183,11 @@ body {
   main {
     padding: 0 !important;
   }
-  .lg\:pl-64 {
+  .app-content {
     padding-left: 0 !important;
+  }
+  .bezel {
+    box-shadow: none !important;
   }
   body {
     background: white;

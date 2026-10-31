@@ -408,7 +408,7 @@ export function Syllabus() {
               </div>
             </div>
             {msg && <p className={`text-sm ${msg.ok ? "text-emerald-600" : "text-red-600"}`}>{msg.text}</p>}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => save(false)}>Жоба ретінде сақтау</Button>
               <Button onClick={() => save(true)}>Модерацияға жіберу</Button>
             </div>

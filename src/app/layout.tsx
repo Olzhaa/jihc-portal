@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin", "cyrillic", "cyrillic-ext"], variable: "--font-inter" });
+// Geist covers Kazakh Cyrillic (ә ғ қ ң ө ұ ү һ і).
+const geist = Geist({ subsets: ["latin", "cyrillic"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
   title: "JIHC Portal",
@@ -19,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={`${inter.variable} antialiased`}>{children}</body>
+      <body className={`${geist.variable} antialiased`}>{children}</body>
     </html>
   );
 }
