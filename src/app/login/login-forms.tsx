@@ -17,12 +17,12 @@ export function LoginForms({
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 rounded-lg bg-muted p-1 text-sm">
+      <div className="grid grid-cols-2 rounded-full bg-muted p-1 text-sm">
         {(["staff", "parent"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`rounded-md py-1.5 font-medium ${tab === t ? "bg-card shadow-sm" : "text-muted-foreground"}`}
+            className={`rounded-full py-2 font-medium transition-all duration-500 ease-spring ${tab === t ? "bg-card shadow-[0_1px_2px_rgba(15,23,42,0.08),0_4px_12px_-4px_rgba(15,23,42,0.12)]" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t === "staff" ? "Студент / Қызметкер" : "Ата-ана"}
           </button>

@@ -29,7 +29,7 @@ export function Timetable({
 }) {
   const cols = `4.5rem repeat(${BELLS.length}, minmax(5.5rem, 1fr))`;
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-card">
+    <div className="overflow-x-auto rounded-[1.375rem] bg-card bezel">
       <div className="min-w-[900px]">
         <div className="grid border-b border-border" style={{ gridTemplateColumns: cols }}>
           <div />
@@ -60,7 +60,7 @@ export function Timetable({
                 <div
                   key={l.id}
                   className={cn(
-                    "relative z-10 m-1 flex flex-col justify-between overflow-hidden rounded-md p-1.5 text-slate-900 shadow-sm",
+                    "relative z-10 m-1 flex flex-col justify-between overflow-hidden rounded-xl p-1.5 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_1px_2px_rgba(15,23,42,0.08)]",
                     l.conflict && "ring-2 ring-red-600",
                   )}
                   style={{ gridColumn: `${l.startPeriod + 1} / ${l.endPeriod + 2}`, gridRow: 1, background: l.color }}

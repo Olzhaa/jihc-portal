@@ -1,14 +1,14 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-const badgeVariants = cva("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", {
+const badgeVariants = cva("inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset", {
   variants: {
     variant: {
-      default: "bg-secondary text-secondary-foreground",
-      success: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-      warning: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-      danger: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-      info: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
+      default: "bg-secondary text-secondary-foreground ring-primary/10",
+      success: "bg-emerald-50 text-emerald-700 ring-emerald-600/15 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/20",
+      warning: "bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-400/20",
+      danger: "bg-red-50 text-red-700 ring-red-600/15 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-400/20",
+      info: "bg-sky-50 text-sky-700 ring-sky-600/15 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-400/20",
     },
   },
   defaultVariants: { variant: "default" },

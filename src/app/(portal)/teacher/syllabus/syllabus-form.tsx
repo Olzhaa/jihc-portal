@@ -90,7 +90,7 @@ export function SyllabusForm({
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {saved && !error && <p className="text-sm text-emerald-600">Сақталды</p>}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button variant="outline" disabled={pending} onClick={() => submit(false)}>
           Жоба ретінде сақтау
         </Button>
