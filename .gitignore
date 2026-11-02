@@ -45,3 +45,6 @@ uploads/
 !.env.example
 demo-dist/
 site-dist/
+
+# EduPage-тен алынған нақты деректер (жеке мәлімет, git-ке салмаңыз)
+/data/

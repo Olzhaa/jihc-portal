@@ -1,8 +1,9 @@
 import type { TimetableLesson } from "@/components/timetable";
 import { BELLS } from "@/lib/bells";
 import { ATTENDED, attendanceRate, gpaFromAverage } from "@/lib/grades";
-import { byCategory, weightedAverage } from "@/lib/assessment";
+import { byCategory, inAcademicYear, weightedAverage } from "@/lib/assessment";
 import { average, isoWeekday } from "@/lib/utils";
+import { buildResults, cleanResultsConfig } from "@/lib/results";
 import type { Db, Lesson } from "./store";
 
 // Ports of the server-side queries in src/lib, working on the in-browser database.
@@ -67,8 +68,8 @@ export function studentOverview(db: Db, studentId: string) {
   const student = byId(db.users, studentId)!;
   const group = byId(db.groups, student.groupId);
   const lessons = student.groupId ? lessonsForGroup(db, student.groupId) : [];
-  const grades = db.grades.filter((g) => g.studentId === studentId).sort((a, b) => +b.date - +a.date);
-  const attendance = db.attendance.filter((a) => a.studentId === studentId);
+  const grades = db.grades.filter((g) => g.studentId === studentId && inAcademicYear(g.date)).sort((a, b) => +b.date - +a.date);
+  const attendance = db.attendance.filter((a) => a.studentId === studentId && inAcademicYear(a.date));
   const avg = weightedAverage(grades);
   return {
     student: { ...student, group },
@@ -84,8 +85,8 @@ export function studentOverview(db: Db, studentId: string) {
 }
 
 export function studentGradebook(db: Db, studentId: string) {
-  const grades = db.grades.filter((g) => g.studentId === studentId).sort((a, b) => +a.date - +b.date);
-  const attendance = db.attendance.filter((a) => a.studentId === studentId).sort((a, b) => +a.date - +b.date);
+  const grades = db.grades.filter((g) => g.studentId === studentId && inAcademicYear(g.date)).sort((a, b) => +a.date - +b.date);
+  const attendance = db.attendance.filter((a) => a.studentId === studentId && inAcademicYear(a.date)).sort((a, b) => +a.date - +b.date);
   const ids = new Set([...grades, ...attendance].map((x) => x.courseId));
   return [...ids]
     .map((id) => {
@@ -104,7 +105,9 @@ export function studentGradebook(db: Db, studentId: string) {
     .sort((x, y) => x.course.title.localeCompare(y.course.title));
 }
 
-export function collegeStats(db: Db) {
+export function collegeStats(all: Db) {
+  // Current academic year only, like src/lib/analytics.ts.
+  const db = { ...all, grades: all.grades.filter((g) => inAcademicYear(g.date)), attendance: all.attendance.filter((a) => inAcademicYear(a.date)) };
   const students = db.users.filter((u) => u.role === "STUDENT");
   const studentGroup = new Map(students.map((s) => [s.id, s.groupId]));
   const avgByStudent = new Map<string, number>();
@@ -156,3 +159,39 @@ export function weeklyAttendance(db: Db, weeks = 8) {
 }
 
 export { byId };
+
+/** Port of loadResults (src/lib/results-server.ts). */
+export function demoResults(db: Db, scope: { groupId: string } | { studentId: string }, year: number) {
+  const students = db.users
+    .filter((u) => ("groupId" in scope ? u.role === "STUDENT" && u.groupId === scope.groupId : u.id === scope.studentId))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((u) => ({ id: u.id, name: u.name }));
+  const ids = new Set(students.map((s) => s.id));
+  const config = cleanResultsConfig(db.resultsConfig);
+  const results = buildResults({
+    year,
+    students,
+    courses: db.courses,
+    grades: db.grades.filter((g) => ids.has(g.studentId)),
+    attendance: db.attendance
+      .filter((a) => ids.has(a.studentId))
+      .map((a) => {
+        const l = byId(db.lessons, a.scheduleId);
+        return { studentId: a.studentId, status: a.status, date: a.date, hours: l ? l.endPeriod - l.startPeriod + 1 : 1 };
+      }),
+    stored: db.finalGrades.filter((f) => f.academicYear === year && ids.has(f.studentId)),
+    config,
+  });
+  return { results, config };
+}
+
+/** Years that have grades, newest first (at least the current and two before). */
+export function demoYears(db: Db, current: number) {
+  let first = current;
+  for (const g of db.grades) {
+    const y = g.date.getUTCMonth() >= 7 ? g.date.getUTCFullYear() : g.date.getUTCFullYear() - 1;
+    if (y < first) first = y;
+  }
+  const from = Math.min(first, current - 2);
+  return Array.from({ length: current - from + 1 }, (_, i) => current - i);
+}

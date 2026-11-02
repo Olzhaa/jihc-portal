@@ -2,7 +2,8 @@ import { PrismaClient, type AttendanceStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { KIND_FIELDS, dateFields, groupCourse, isoToday, type RecordKind } from "../src/lib/curator";
 import { demoCuratorData } from "../src/lib/curator-demo";
-import { suggestSnationCode } from "../src/lib/assessment";
+import { academicYearStart, suggestSnationCode } from "../src/lib/assessment";
+import { previousYearDemo } from "../src/lib/results-demo";
 import { GRAPH_PLAN, IKT_DETAILS, IKT_PLAN } from "../src/lib/demo-plans";
 import { totals } from "../src/lib/syllabus";
 
@@ -26,7 +27,7 @@ async function main() {
   await prisma.$transaction([
     prisma.contactLog.deleteMany(), prisma.guardian.deleteMany(), prisma.studentProfile.deleteMany(), prisma.achievement.deleteMany(),
     prisma.bookRead.deleteMany(), prisma.testResult.deleteMany(), prisma.reflection.deleteMany(), prisma.curatorTask.deleteMany(), prisma.classEvent.deleteMany(),
-    prisma.attendance.deleteMany(), prisma.grade.deleteMany(), prisma.assignment.deleteMany(), prisma.medicalCertificate.deleteMany(),
+    prisma.finalGrade.deleteMany(), prisma.setting.deleteMany(), prisma.attendance.deleteMany(), prisma.grade.deleteMany(), prisma.assignment.deleteMany(), prisma.medicalCertificate.deleteMany(),
     prisma.booking.deleteMany(), prisma.syllabus.deleteMany(), prisma.lessonRecord.deleteMany(), prisma.schedule.deleteMany(),
     prisma.announcement.deleteMany(), prisma.rule.deleteMany(), prisma.parentLink.deleteMany(),
     prisma.user.deleteMany(), prisma.group.deleteMany(), prisma.course.deleteMany(), prisma.room.deleteMany(),
@@ -172,6 +173,12 @@ async function main() {
   }
   await prisma.attendance.createMany({ data: attendance });
   await prisma.grade.createMany({ data: gradesData });
+
+  // The previous, closed academic year, so «Қорытындылар» shows both half-years, year and exam grades.
+  const prev = previousYearDemo({ year: academicYearStart() - 1, students, lessons, skipCourses: [tarbie.id], skill, truant, rand, setById: zavuch.id });
+  await prisma.grade.createMany({ data: prev.grades });
+  await prisma.attendance.createMany({ data: prev.attendance });
+  await prisma.finalGrade.createMany({ data: prev.finals });
 
   const daysAgo = (d: number) => new Date(Date.now() - d * 86400000);
   await prisma.medicalCertificate.createMany({

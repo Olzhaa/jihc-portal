@@ -1,19 +1,22 @@
 import { prisma } from "./prisma";
 import { average } from "./utils";
 import { gpaFromAverage } from "./grades";
+import { academicYearRange } from "./assessment";
 
-/** College-wide numbers used by the vice principal and director dashboards. */
+/** College-wide numbers for the current academic year, used by the vice principal and director dashboards. */
 export async function collegeStats() {
+  const year = academicYearRange();
   const [groups, attendanceByGroup, gradesByStudent, students, absencesByStudent] = await Promise.all([
     prisma.group.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { students: true } } } }),
     prisma.$queryRaw<{ groupId: string; total: bigint; attended: bigint }[]>`
       SELECT u."groupId", COUNT(*) AS total,
              COUNT(*) FILTER (WHERE a.status IN ('PRESENT','LATE','LEFT_EARLY')) AS attended
       FROM "Attendance" a JOIN "User" u ON u.id = a."studentId"
+      WHERE a."date" >= ${year.gte} AND a."date" < ${year.lt}
       GROUP BY u."groupId"`,
-    prisma.grade.groupBy({ by: ["studentId"], _avg: { value: true } }),
+    prisma.grade.groupBy({ by: ["studentId"], where: { date: year }, _avg: { value: true } }),
     prisma.user.findMany({ where: { role: "STUDENT" }, include: { group: true } }),
-    prisma.attendance.groupBy({ by: ["studentId"], where: { status: "ABSENT" }, _count: { _all: true } }),
+    prisma.attendance.groupBy({ by: ["studentId"], where: { status: "ABSENT", date: year }, _count: { _all: true } }),
   ]);
 
   const avgByStudent = new Map(gradesByStudent.map((g) => [g.studentId, g._avg.value ?? 0]));

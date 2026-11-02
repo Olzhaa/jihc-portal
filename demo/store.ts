@@ -4,8 +4,10 @@ import { demoCuratorData } from "@/lib/curator-demo";
 import type { SyllabusDetails, SyllabusTopic } from "@/lib/syllabus";
 import { GRAPH_PLAN, IKT_DETAILS, IKT_PLAN } from "@/lib/demo-plans";
 import { totals } from "@/lib/syllabus";
-import { suggestSnationCode } from "@/lib/assessment";
-import type { AttendanceStatus, BookingStatus, CertificateStatus, GradeType, ResourceType, Role, SyllabusStatus } from "@prisma/client";
+import { academicYearStart, suggestSnationCode } from "@/lib/assessment";
+import type { ResultsConfig } from "@/lib/results";
+import { previousYearDemo } from "@/lib/results-demo";
+import type { AttendanceStatus, BookingStatus, CertificateStatus, FinalPeriod, GradeType, ResourceType, Role, SyllabusStatus } from "@prisma/client";
 
 /**
  * In-browser stand-in for the PostgreSQL database, so the portal runs as a static
@@ -31,6 +33,7 @@ export type Certificate = { id: string; studentId: string; reviewerId: string | 
 export type Announcement = { id: string; title: string; content: string; authorId: string; important: boolean; groupIds: string[]; createdAt: Date };
 export type Rule = { id: string; title: string; content: string; authorId: string; createdAt: Date; updatedAt: Date };
 export type ParentLink = { parentId: string; childId: string };
+export type FinalGrade = { id: string; studentId: string; courseId: string; academicYear: number; period: FinalPeriod; value: number; manual: boolean; setById: string };
 /** Curator workspace records, in the same plain shape the shared curator pages use. */
 export type CuratorRow = Record<string, unknown> & { id: string };
 export type CuratorData = {
@@ -46,9 +49,12 @@ export type Db = {
   attendance: Attendance[]; grades: Grade[]; assignments: Assignment[]; syllabi: Syllabus[]; bookings: Booking[]; lessonRecords: LessonRecord[];
   certificates: Certificate[]; announcements: Announcement[]; rules: Rule[]; parentLinks: ParentLink[];
   curator: CuratorData;
+  finalGrades: FinalGrade[];
+  /** null — әдепкі формула (src/lib/results.ts). */
+  resultsConfig: ResultsConfig | null;
 };
 
-const VERSION = 5;
+const VERSION = 6;
 const KEY = "jihc-demo-db";
 const SESSION_KEY = "jihc-demo-user";
 
@@ -71,7 +77,8 @@ function generate(): Db {
   };
 
   const db: Db = { version: VERSION, users: [], groups: [], courses: [], rooms: [], lessons: [], attendance: [], grades: [], assignments: [], syllabi: [], lessonRecords: [], bookings: [], certificates: [], announcements: [], rules: [], parentLinks: [],
-    curator: { profiles: {}, guardians: [], contacts: [], tasks: [], events: [], achievements: [], books: [], tests: [], reflections: [] } };
+    curator: { profiles: {}, guardians: [], contacts: [], tasks: [], events: [], achievements: [], books: [], tests: [], reflections: [] },
+    finalGrades: [], resultsConfig: null };
   const groups: Group[] = ["2F-1", "2D-1", "3F-3", "1P-2"].map((name) => ({ id: uid(), name, snationCode: suggestSnationCode(name), curatorId: null }));
   db.groups = groups;
   const [g2F1, g2D1, g3F3, g1P2] = groups;
@@ -174,6 +181,12 @@ function generate(): Db {
       }
     }
   }
+
+  // The previous, closed academic year, so «Қорытындылар» shows both half-years, year and exam grades.
+  const prev = previousYearDemo({ year: academicYearStart() - 1, students, lessons: db.lessons, skipCourses: [tarbie.id], skill, truant, rand, setById: zavuch.id });
+  for (const g of prev.grades) db.grades.push({ ...g, id: uid(), scheduleId: null, assignmentId: null });
+  for (const a of prev.attendance) db.attendance.push({ ...a, id: uid() });
+  db.finalGrades = prev.finals.map((f) => ({ ...f, id: uid() }));
 
   const daysAgo = (d: number) => utcDay(new Date(Date.now() - d * 86400000));
   const cert = (studentId: string, a: number, b: number, status: CertificateStatus, reviewNote: string | null = null): Certificate => ({

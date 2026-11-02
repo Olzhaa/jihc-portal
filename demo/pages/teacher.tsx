@@ -16,6 +16,7 @@ import { GradebookTable } from "@/components/gradebook-table";
 import { SyllabusEditor, SyllabusExport, type SyllabusDraft } from "@/components/syllabus-editor";
 import { journalColumns, pickPlan, validateJournal, type JournalPayload } from "@/lib/journal";
 import { cleanAssignment } from "@/lib/gradebook";
+import { inAcademicYear } from "@/lib/assessment";
 import { cleanSyllabus, normalizeDetails, normalizeTopics } from "@/lib/syllabus";
 import { MANAGER_ROLES } from "@/lib/roles";
 import { cn, formatDate, isoWeekday, parseISODate, toISODate } from "@/lib/utils";
@@ -290,8 +291,8 @@ export function Gradebook() {
             key={title}
             title={title}
             students={students.map((s) => ({ id: s.id, name: s.name }))}
-            grades={db.grades.filter((g) => g.courseId === course.id && ids.has(g.studentId))}
-            assignments={db.assignments.filter((a) => a.courseId === course.id && a.groupId === group.id)}
+            grades={db.grades.filter((g) => g.courseId === course.id && ids.has(g.studentId) && inAcademicYear(g.date))}
+            assignments={db.assignments.filter((a) => a.courseId === course.id && a.groupId === group.id && inAcademicYear(a.date))}
             actions={{
               setGrade: ({ studentId, column, gradeId, value }) =>
                 mutate((d) => {
@@ -323,7 +324,7 @@ export function Gradebook() {
                 }),
             }}
             attendance={db.attendance
-              .filter((a) => a.courseId === course.id && ids.has(a.studentId))
+              .filter((a) => a.courseId === course.id && ids.has(a.studentId) && inAcademicYear(a.date))
               .map((a) => {
                 const l = byId(db.lessons, a.scheduleId);
                 return { studentId: a.studentId, status: a.status, date: a.date, hours: l ? l.endPeriod - l.startPeriod + 1 : 1 };
@@ -340,8 +341,8 @@ function JournalHistory({ lessonId }: { lessonId: string }) {
   const lesson = byId(db.lessons, lessonId)!;
   const students = db.users.filter((u) => u.role === "STUDENT" && u.groupId === lesson.groupId).sort((a, b) => a.name.localeCompare(b.name));
   const ids = new Set(students.map((s) => s.id));
-  const history = db.attendance.filter((a) => a.courseId === lesson.courseId && ids.has(a.studentId));
-  const grades = db.grades.filter((g) => g.courseId === lesson.courseId && ids.has(g.studentId));
+  const history = db.attendance.filter((a) => a.courseId === lesson.courseId && ids.has(a.studentId) && inAcademicYear(a.date));
+  const grades = db.grades.filter((g) => g.courseId === lesson.courseId && ids.has(g.studentId) && inAcademicYear(g.date));
   const iso = (d: Date) => d.toISOString().slice(0, 10);
   const dates = [...new Set(history.map((h) => iso(h.date)))].sort().slice(-10);
   return (
