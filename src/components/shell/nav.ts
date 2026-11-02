@@ -25,6 +25,7 @@ const managementGroup: NavGroup = {
     { href: "/academic-director/bookings", label: "Брондау өтінімдері", icon: "door" },
     { href: "/academic-director/parents", label: "Ата-ана PIN-кодтары", icon: "key" },
     { href: "/academic-director/curators", label: "Кураторлар", icon: "usercheck" },
+    { href: "/academic-director/results", label: "Қорытындылар", icon: "award" },
     { href: "/academic-director/groups", label: "Топтар: EduPage ↔ Smart Nation", icon: "users" },
   ],
 };
@@ -35,6 +36,7 @@ export const curatorGroup: NavGroup = {
   items: [
     { href: "/teacher/curator", label: "Шолу", icon: "compass" },
     { href: "/teacher/curator/students", label: "Студенттер", icon: "users" },
+    { href: "/teacher/curator/results", label: "Қорытындылар", icon: "award" },
     { href: "/teacher/curator/contacts", label: "Байланыс журналы", icon: "message" },
     { href: "/teacher/curator/cycle", label: "Куратор циклы", icon: "repeat" },
     { href: "/teacher/curator/events", label: "Іс-шаралар", icon: "party" },
